@@ -1,0 +1,8 @@
+# Ignorar todo lo generado por CMake
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+
+# Ignorar dependencias externas descargadas por FetchContent
+build/_deps/
