@@ -1,4 +1,4 @@
-# libgraph2
+# libgraph3
 
 libgraph3: BGI / <graphics.h> Moderno para Linux
 
