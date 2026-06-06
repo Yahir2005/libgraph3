@@ -1,9 +1,14 @@
 #ifndef LIBGRAPH3_H
 #define LIBGRAPH3_H
 
+/* Si el compilador es de C++ (g++), activamos el bloque extern "C" */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DETECT 0
 
-/* Paleta clásica de BGI (16 colores de DOS) */
+/* Paleta clásica de BGI */
 #define BLACK 0
 #define BLUE 1
 #define GREEN 2
@@ -42,5 +47,10 @@ int getch(void);
 
 /* Texto moderno */
 void outtextxy(int x, int y, const char *text);
+
+/* Cerramos el bloque extern "C" si estamos en C++ */
+#ifdef __cplusplus
+}
+#endif
 
 #endif
