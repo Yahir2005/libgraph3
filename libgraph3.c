@@ -293,3 +293,21 @@ void arc(int x, int y, int stangle, int endangle, int radius) {
     /* Un arco es simplemente una elipse donde ambos radios son iguales */
     ellipse(x, y, stangle, endangle, radius, radius);
 }
+
+/* --- LECTORES DE ESTADO (GETTERS) --- */
+
+int getx(void) {
+    return cp_x;
+}
+
+int gety(void) {
+    return cp_y;
+}
+
+int getcolor(void) {
+    return current_color;
+}
+
+int getbkcolor(void) {
+    return current_bkcolor;
+}

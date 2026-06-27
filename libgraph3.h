@@ -65,6 +65,12 @@ int getmaxy(void);
 int textwidth(const char *text);
 int textheight(const char *text);
 
+/* Lectores de Estado (Getters) */
+int getx(void);
+int gety(void);
+int getcolor(void);
+int getbkcolor(void);
+
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }

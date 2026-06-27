@@ -1,4 +1,5 @@
 #include <libgraph3.h>
+#include <stdio.h>
 
 int main() {
     int gd = DETECT, gm = 0;
@@ -7,31 +8,32 @@ int main() {
     setbkcolor(DARKGRAY);
     cleardevice();
 
-    /* 1. Prueba de drawpoly: Dibujaremos una nave espacial o un rombo */
-    /* Nota: Para cerrar la figura, el último punto debe ser igual al primero */
-    int puntos_poligono[] = {
-        320, 100,  /* Punto 1: Arriba centro */
-        400, 250,  /* Punto 2: Derecha */
-        320, 300,  /* Punto 3: Abajo centro */
-        240, 250,  /* Punto 4: Izquierda */
-        320, 100   /* Punto 5: Volvemos a cerrar arriba */
-    };
-    
-    setcolor(LIGHTGREEN);
-    drawpoly(5, puntos_poligono); /* 5 puntos totales */
-
-    /* 2. Prueba de ellipse: Un anillo orbital alrededor del polígono */
+    /* 1. Movemos el lápiz y cambiamos el color */
     setcolor(YELLOW);
-    /* Dibuja una elipse completa (0 a 360 grados) */
-    ellipse(320, 250, 0, 360, 200, 80);
+    moveto(150, 150);
+    lineto(300, 150);
+    
+    /* 2. Le preguntamos a la librería dónde se quedó y qué color tiene */
+    int posicion_x = getx();
+    int posicion_y = gety();
+    int color_actual = getcolor();
+    int fondo_actual = getbkcolor();
 
-    /* 3. Prueba de arc: Un arco iris en la parte superior */
-    setcolor(LIGHTRED);
-    /* Dibuja medio círculo exacto superior (0 a 180 grados) */
-    arc(320, 250, 0, 180, 220);
+    /* 3. Formateamos la información en cadenas de texto */
+    char texto_posicion[100];
+    char texto_color[100];
+    
+    sprintf(texto_posicion, "El lapiz se detuvo en: X=%d, Y=%d", posicion_x, posicion_y);
+    sprintf(texto_color, "Color de linea: %d | Color de fondo: %d", color_actual, fondo_actual);
 
+    /* 4. Mostramos los datos en pantalla */
     setcolor(WHITE);
-    outtextxy(180, 400, "Poligonos y Trigonometria renderizados");
+    outtextxy(150, 200, texto_posicion);
+    outtextxy(150, 230, texto_color);
+
+    /* Un pequeño indicador visual de dónde está el lápiz */
+    setcolor(LIGHTRED);
+    circle(posicion_x, posicion_y, 5);
 
     getch(); 
     closegraph();
