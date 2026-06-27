@@ -2,6 +2,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
+#include <math.h> /* Nueva cabecera para trigonometría */
+
+#define PI 3.14159265358979323846
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
@@ -233,4 +236,60 @@ void linerel(int dx, int dy) {
     line(cp_x, cp_y, cp_x + dx, cp_y + dy);
     cp_x += dx;
     cp_y += dy;
+}
+
+/* --- GEOMETRÍA AVANZADA --- */
+
+void drawpoly(int numpoints, int *polypoints) {
+    if (numpoints < 2 || !polypoints) return;
+    
+    /* El arreglo polypoints tiene el formato [x1, y1, x2, y2, ...] */
+    /* Iteramos conectando cada punto con el siguiente */
+    for (int i = 0; i < numpoints - 1; i++) {
+        line(polypoints[i * 2], polypoints[i * 2 + 1],
+             polypoints[(i + 1) * 2], polypoints[(i + 1) * 2 + 1]);
+    }
+}
+
+void ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius) {
+    /* Si el radio es 0, no hay nada que dibujar */
+    if (xradius <= 0 || yradius <= 0) return;
+
+    BGIColor fg = palette[current_color];
+    SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
+
+    /* Calculamos la suavidad de la curva dependiendo de su tamaño */
+    float step = 1.0f / (float)(xradius > yradius ? xradius : yradius);
+    
+    /* Convertimos los ángulos de grados BGI a radianes */
+    float start_rad = stangle * PI / 180.0f;
+    float end_rad = endangle * PI / 180.0f;
+
+    /* Si el ángulo final es menor, asumimos que da la vuelta completa */
+    if (end_rad < start_rad) end_rad += 2.0f * PI;
+
+    /* Punto de inicio */
+    float last_px = x + xradius * cosf(start_rad);
+    float last_py = y - yradius * sinf(start_rad); 
+
+    /* Trazamos pequeños segmentos de línea a lo largo de la curva polar */
+    for (float theta = start_rad + step; theta <= end_rad; theta += step) {
+        float px = x + xradius * cosf(theta);
+        float py = y - yradius * sinf(theta);
+        SDL_RenderLine(renderer, last_px, last_py, px, py);
+        last_px = px;
+        last_py = py;
+    }
+    
+    /* Para evitar huecos al final de la curva por el redondeo del ciclo */
+    float final_px = x + xradius * cosf(end_rad);
+    float final_py = y - yradius * sinf(end_rad);
+    SDL_RenderLine(renderer, last_px, last_py, final_px, final_py);
+    
+    SDL_RenderPresent(renderer);
+}
+
+void arc(int x, int y, int stangle, int endangle, int radius) {
+    /* Un arco es simplemente una elipse donde ambos radios son iguales */
+    ellipse(x, y, stangle, endangle, radius, radius);
 }

@@ -27,7 +27,7 @@ add_library(graph3 SHARED libgraph3.c)
 
 # Vinculamos las dependencias. Usamos PUBLIC para que quien
 # use nuestra librería herede automáticamente SDL3.
-target_link_libraries(graph3 PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+target_link_libraries(graph3 PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf m)
 
 # ---------------------------------------------------------
 # 2. PROGRAMA DE PRUEBA (Opcional)

@@ -31,6 +31,11 @@ void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver);
 void closegraph(void);
 void delay(int millis);
 
+/* Geometría Avanzada */
+void drawpoly(int numpoints, int *polypoints);
+void ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius);
+void arc(int x, int y, int stangle, int endangle, int radius);
+
 /* Nuevas primitivas de dibujo */
 void setcolor(int color);
 void setbkcolor(int color);
