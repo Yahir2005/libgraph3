@@ -18,6 +18,9 @@ static int cp_y = 0;
 
 static int key_buffer = 0;
 
+static int current_fill_color = WHITE; /* Color del relleno */
+static int current_fill_pattern = SOLID_FILL; /* Estilo del relleno */
+
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
     {0, 0, 0},       {0, 0, 170},     {0, 170, 0},     {0, 170, 170},
@@ -310,4 +313,29 @@ int getcolor(void) {
 
 int getbkcolor(void) {
     return current_bkcolor;
+}
+
+/* --- FIGURAS CON RELLENO SÓLIDO --- */
+
+void setfillstyle(int pattern, int color) {
+    current_fill_pattern = pattern;
+    if (color >= 0 && color <= 15) {
+        current_fill_color = color;
+    }
+}
+
+void bar(int left, int top, int right, int bottom) {
+    /* Si el estilo es vacío, no pintamos el interior */
+    if (current_fill_pattern == EMPTY_FILL) return;
+
+    /* Obtenemos el color de relleno y lo preparamos para la tarjeta gráfica */
+    BGIColor fill_bg = palette[current_fill_color];
+    SDL_SetRenderDrawColor(renderer, fill_bg.r, fill_bg.g, fill_bg.b, SDL_ALPHA_OPAQUE);
+
+    /* Calculamos las dimensiones del bloque */
+    SDL_FRect rect = { (float)left, (float)top, (float)(right - left), (float)(bottom - top) };
+    
+    /* SDL_RenderFillRect dibuja el rectángulo completamente coloreado por dentro */
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_RenderPresent(renderer);
 }

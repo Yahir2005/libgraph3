@@ -26,6 +26,10 @@ extern "C" {
 #define YELLOW 14
 #define WHITE 15
 
+/* Estilos de Relleno */
+#define EMPTY_FILL 0
+#define SOLID_FILL 1
+
 /* Inicialización */
 void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver);
 void closegraph(void);
@@ -46,6 +50,10 @@ void line(int x1, int y1, int x2, int y2);
 void putpixel(int x, int y, int color);
 void rectangle(int left, int top, int right, int bottom);
 void circle(int x, int y, int radius);
+
+/* Figuras con Relleno */
+void setfillstyle(int pattern, int color);
+void bar(int left, int top, int right, int bottom);
 
 /*Cursor Gráfico */
 void moveto(int x, int y);
