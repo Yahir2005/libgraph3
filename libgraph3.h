@@ -30,6 +30,13 @@ extern "C" {
 #define EMPTY_FILL 0
 #define SOLID_FILL 1
 
+/* Macros para settextjustify */
+#define LEFT_TEXT    0
+#define CENTER_TEXT  1
+#define RIGHT_TEXT   2
+#define BOTTOM_TEXT  0
+#define TOP_TEXT     2
+
 /* Inicialización */
 void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver);
 void closegraph(void);
@@ -83,6 +90,10 @@ int getx(void);
 int gety(void);
 int getcolor(void);
 int getbkcolor(void);
+
+/* Funciones de Texto Dinámico */
+void settextstyle(int font, int direction, int charsize);
+void settextjustify(int horiz, int vert);
 
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus

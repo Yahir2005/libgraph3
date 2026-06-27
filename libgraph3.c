@@ -22,6 +22,11 @@ static int key_buffer = 0;
 static int current_fill_color = WHITE; /* Color del relleno */
 static int current_fill_pattern = SOLID_FILL; /* Estilo del relleno */
 
+/* Nuevas variables para el estado del texto */
+static int current_text_horiz = LEFT_TEXT;
+static int current_text_vert = TOP_TEXT;
+static int current_text_size = 18; /* Tamaño por defecto en puntos */
+
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
     {0, 0, 0},       {0, 0, 170},     {0, 170, 0},     {0, 170, 170},
@@ -161,25 +166,39 @@ void circle(int xc, int yc, int r) {
 void outtextxy(int x, int y, const char *text) {
     if (!default_font || !text) return;
 
-    /* Obtenemos el color actual de BGI y lo convertimos a SDL_Color */
+    /* 1. Medimos cuántos píxeles ocupará este texto en pantalla con el tamaño actual */
+    int text_w = 0, text_h = 0;
+    TTF_GetStringSize(default_font, text, 0, &text_w, &text_h);
+
+    /* 2. Aplicamos la justificación horizontal */
+    int adj_x = x;
+    if (current_text_horiz == CENTER_TEXT) {
+        adj_x = x - (text_w / 2);
+    } else if (current_text_horiz == RIGHT_TEXT) {
+        adj_x = x - text_w;
+    }
+
+    /* 3. Aplicamos la justificación vertical */
+    int adj_y = y;
+    if (current_text_vert == CENTER_TEXT) {
+        adj_y = y - (text_h / 2);
+    } else if (current_text_vert == BOTTOM_TEXT) {
+        adj_y = y - text_h;
+    }
+
+    /* 4. Renderizado estándar de SDL3_ttf con las coordenadas ajustadas */
     BGIColor fg = palette[current_color];
     SDL_Color textColor = { fg.r, fg.g, fg.b, 255 };
 
-    /* Creamos una superficie (en RAM) con el texto renderizado y suavizado */
     SDL_Surface* textSurface = TTF_RenderText_Blended(default_font, text, 0, textColor);
     if (!textSurface) return;
 
-    /* Subimos esa superficie a la memoria de video (VRAM) como una textura */
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    
-    /* Preparamos el rectángulo de destino usando el tamaño real de la fuente */
-    SDL_FRect renderQuad = { (float)x, (float)y, (float)textSurface->w, (float)textSurface->h };
+    SDL_FRect renderQuad = { (float)adj_x, (float)adj_y, (float)textSurface->w, (float)textSurface->h };
 
-    /* Dibujamos la textura en la pantalla */
     SDL_RenderTexture(renderer, textTexture, NULL, &renderQuad);
     SDL_RenderPresent(renderer);
 
-    /* Limpiamos la memoria temporal */
     SDL_DestroyTexture(textTexture);
     SDL_DestroySurface(textSurface);
 }
@@ -419,4 +438,23 @@ void floodfill(int x, int y, int border) {
 
     SDL_DestroyTexture(tex);
     SDL_DestroySurface(surf);
+}
+
+/* --- TEXTO DINÁMICO --- */
+
+void settextstyle(int font, int direction, int charsize) {
+    /* Por ahora ignoramos 'font' y 'direction' para mantener el estándar de la fuente DejaVu */
+    /* En BGI, 'charsize' solía ser un multiplicador (1, 2, 3). Lo mapearemos a puntos reales */
+    if (charsize <= 0) charsize = 1;
+    current_text_size = charsize * 12; // Multiplicador base de 12 puntos por unidad
+
+    if (default_font) {
+        /* SDL3_ttf nos permite cambiar el tamaño de la fuente cargada en vivo */
+        TTF_SetFontSize(default_font, (float)current_text_size);
+    }
+}
+
+void settextjustify(int horiz, int vert) {
+    if (horiz >= 0 && horiz <= 2) current_text_horiz = horiz;
+    if (vert >= 0 && vert <= 2) current_text_vert = vert;
 }

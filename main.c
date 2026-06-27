@@ -4,34 +4,35 @@ int main() {
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
 
-    setbkcolor(LIGHTGRAY);
+    setbkcolor(DARKGRAY);
     cleardevice();
 
-    /* 1. Dibujamos 3 círculos amarillos que se cruzan en el medio (Estilo Diagrama de Venn) */
+    int cx = getmaxx() / 2;
+    int cy = getmaxy() / 2;
+
+    // Dibujamos un punto de mira central (nuestro eje de coordenadas)
+    setcolor(LIGHTRED);
+    line(cx - 20, cy, cx + 20, cy);
+    line(cx, cy - 20, cx, cy + 20);
+
+    // Prueba 1: Texto grande centrado perfectamente en el eje
+    settextstyle(0, 0, 3); // Multiplicador 3 (~36 puntos)
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
     setcolor(YELLOW);
-    circle(280, 220, 80);
-    circle(360, 220, 80);
-    circle(320, 290, 80);
+    outtextxy(cx, cy, "CENTRADISIMO");
 
-    /* 2. Seleccionamos el color del relleno (Pintura Roja) */
-    setfillstyle(SOLID_FILL, LIGHTRED);
-    
-    /* 3. Vaciamos la pintura exactamente en la intersección central */
-    /* floodfill detectará los bordes amarillos y se detendrá ahí */
-    floodfill(320, 240, YELLOW);
+    // Prueba 2: Texto alineado a la derecha arriba del eje
+    settextstyle(0, 0, 1.5); // Más pequeño
+    settextjustify(RIGHT_TEXT, TOP_TEXT);
+    setcolor(LIGHTCYAN);
+    outtextxy(cx - 30, cy - 40, "Derecha-Superior ->");
 
-    /* Rellenamos los pétalos exteriores de otros colores */
-    setfillstyle(SOLID_FILL, LIGHTBLUE);
-    floodfill(250, 200, YELLOW);
-    
-    setfillstyle(SOLID_FILL, LIGHTGREEN);
-    floodfill(390, 200, YELLOW);
+    // Prueba 3: Texto alineado a la izquierda abajo del eje
+    settextjustify(LEFT_TEXT, BOTTOM_TEXT);
+    setcolor(LIGHTGREEN);
+    outtextxy(cx + 30, cy + 40, "<- Izquierda-Inferior");
 
-    setcolor(BLACK);
-    outtextxy(180, 420, "Floodfill cruzando el CPU y GPU exitosamente");
-
-    getch(); 
+    getch();
     closegraph();
-    
     return 0;
 }
