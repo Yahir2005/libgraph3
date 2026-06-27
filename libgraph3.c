@@ -458,3 +458,70 @@ void settextjustify(int horiz, int vert) {
     if (horiz >= 0 && horiz <= 2) current_text_horiz = horiz;
     if (vert >= 0 && vert <= 2) current_text_vert = vert;
 }
+
+/* --- MEMORIA VISUAL Y SPRITES --- */
+
+unsigned int imagesize(int left, int top, int right, int bottom) {
+    int w = right - left;
+    int h = bottom - top;
+    if (w <= 0 || h <= 0) return 0;
+    
+    /* Guardamos 4 bytes para ancho, 4 para alto, y 4 bytes por cada píxel */
+    return 8 + (w * h * 4);
+}
+
+void getimage(int left, int top, int right, int bottom, void *bitmap) {
+    if (!bitmap) return;
+    
+    int w = right - left;
+    int h = bottom - top;
+    if (w <= 0 || h <= 0) return;
+
+    /* 1. Guardamos las dimensiones en el "encabezado" (primeros 8 bytes del buffer) */
+    int *header = (int *)bitmap;
+    header[0] = w;
+    header[1] = h;
+
+    /* 2. El área de los píxeles empieza justo después del encabezado */
+    Uint32 *pixel_data = (Uint32 *)((char *)bitmap + 8);
+
+    /* 3. Le tomamos la "foto" a la tarjeta gráfica */
+    SDL_Rect rect = { left, top, w, h };
+    SDL_Surface* raw_surf = SDL_RenderReadPixels(renderer, &rect);
+    if (!raw_surf) return;
+
+    /* 4. Estandarizamos los colores a 32 bits y los copiamos a la RAM de tu programa en C */
+    SDL_Surface* surf = SDL_ConvertSurface(raw_surf, SDL_PIXELFORMAT_ARGB8888);
+    SDL_DestroySurface(raw_surf);
+    if (!surf) return;
+
+    memcpy(pixel_data, surf->pixels, w * h * 4);
+    SDL_DestroySurface(surf);
+}
+
+void putimage(int left, int top, void *bitmap, int op) {
+    if (!bitmap) return;
+    
+    /* 1. Leemos las dimensiones desde el encabezado */
+    int *header = (int *)bitmap;
+    int w = header[0];
+    int h = header[1];
+    if (w <= 0 || h <= 0) return;
+
+    /* 2. Apuntamos a donde empiezan los colores reales */
+    void *pixel_data = (char *)bitmap + 8;
+
+    /* 3. Reconstruimos una superficie a partir de la memoria bruta */
+    SDL_Surface* surf = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ARGB8888, pixel_data, w * 4);
+    if (!surf) return;
+
+    /* 4. Subimos la superficie a la VRAM y la pegamos en la pantalla */
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    if (tex) {
+        SDL_FRect dest = { (float)left, (float)top, (float)w, (float)h };
+        SDL_RenderTexture(renderer, tex, NULL, &dest);
+        SDL_RenderPresent(renderer);
+        SDL_DestroyTexture(tex);
+    }
+    SDL_DestroySurface(surf);
+}

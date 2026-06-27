@@ -37,6 +37,9 @@ extern "C" {
 #define BOTTOM_TEXT  0
 #define TOP_TEXT     2
 
+/* Memoria Visual y Sprites */
+#define COPY_PUT 0
+
 /* Inicialización */
 void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver);
 void closegraph(void);
@@ -94,6 +97,10 @@ int getbkcolor(void);
 /* Funciones de Texto Dinámico */
 void settextstyle(int font, int direction, int charsize);
 void settextjustify(int horiz, int vert);
+
+unsigned int imagesize(int left, int top, int right, int bottom);
+void getimage(int left, int top, int right, int bottom, void *bitmap);
+void putimage(int left, int top, void *bitmap, int op);
 
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
