@@ -1,34 +1,45 @@
-# libgraph3
+# libgraph3: BGI / `<graphics.h>` Moderno para Linux
 
-libgraph3: BGI / <graphics.h> Moderno para Linux
+**libgraph3** es una reimplementación moderna, ligera y acelerada por hardware de la clásica librería `graphics.h` (Borland Graphics Interface - BGI) de MS-DOS. Está construida en C puro utilizando **SDL 3** y **CMake**, diseñada específicamente para compilar y funcionar de manera nativa en distribuciones Linux modernas sin las dependencias obsoletas de hace 20 años.
 
-libgraph3 es una reimplementación moderna, ligera y acelerada por hardware de la clásica librería graphics.h (Borland Graphics Interface - BGI) de MS-DOS. Está construida en C puro utilizando SDL 3 y CMake, diseñada específicamente para compilar y funcionar de manera nativa en distribuciones Linux modernas sin las dependencias obsoletas de hace 20 años.
+## 🚀 Motivación
 
-✨ Características Principales
-100% Acelerada por Hardware: Usa el backend nativo de SDL 3. Las primitivas geométricas envían instrucciones directas a la tarjeta gráfica.
+La librería original `libgraph` (1.0.2) lleva abandonada desde 2006. Sus dependencias en SDL 1.2 y Guile, sumadas a su antiguo sistema de construcción *Autotools*, hacen que sea casi imposible instalarla en sistemas actuales sin múltiples errores de compilación (`-fcommon`, *undefined references*, etc.).
 
-Bilingüe (C y C++): Compatible con gcc y g++ gracias a su integración extern "C".
+Este proyecto nace para ayudar a estudiantes de ingeniería de software y entusiastas de la programación a modernizar sus algoritmos y tareas clásicas. **libgraph3** reemplaza la emulación de software en RAM por aceleración gráfica directa en VRAM (GPU), manteniendo intacta la simplicidad de uso de la API original de Borland.
 
-Texto Moderno: Adiós al bitmap de 8x8. Soporta tipografías TrueType (.ttf) con anti-aliasing real mediante SDL3_ttf.
+## ✨ Características Principales
 
-Interacción Asíncrona: La función getch() ha sido reescrita para usar la cola de eventos moderna. Tu programa ya no congelará el uso de CPU de tu sistema operativo mientras espera una tecla.
+* **100% Acelerada por Hardware:** Las primitivas geométricas envían instrucciones directas a la tarjeta gráfica mediante SDL 3.
+* **Geometría y Relleno Avanzados:** Soporte para polígonos, trigonometría (elipses/arcos) y un motor de relleno (`floodfill`) que cruza eficientemente la GPU y la CPU usando DFS iterativo.
+* **Memoria Visual (Sprites):** Soporte nativo para capturar y pegar porciones de la VRAM (`getimage` / `putimage`) a 60 FPS, ideal para videojuegos retro.
+* **Teclado Asíncrono:** Funciones como `kbhit()` permiten leer el teclado en tiempo real sin bloquear la ejecución del programa.
+* **Tipografía Dinámica:** Motor de texto TrueType (`SDL3_ttf`) con escalado al vuelo, justificación matemática y anti-aliasing.
+* **Bilingüe (C y C++):** Compatible con `gcc` y `g++` gracias a su integración `extern "C"`.
 
-Fácil Instalación: Sistema de compilación unificado de 30 líneas en CMake que descarga automáticamente las dependencias dinámicas.
+---
 
-🛠️ Instalación
-1. Dependencias Previas
-Antes de compilar, necesitas instalar las herramientas de desarrollo y los motores tipográficos básicos. En distros basadas en Debian/Ubuntu, ejecuta:
+## 🛠️ Instalación
 
+### 1. Dependencias Previas
+
+En distribuciones basadas en Debian/Ubuntu, instala las herramientas de compilación y dependencias de ventanas/fuentes:
+
+```bash
 sudo apt update
-sudo apt install build-essential cmake git libfreetype-dev libharfbuzz-dev
+sudo apt install build-essential cmake git libfreetype-dev libharfbuzz-dev libx11-dev libwayland-dev libxkbcommon-dev libxext-dev libxrender-dev libxcursor-dev libxi-dev libxfixes-dev libxrandr-dev libxss-dev libxtst-dev
 
-(Nota: No necesitas instalar SDL 3 manualmente, CMake lo descargará de los repositorios oficiales por ti).
+```
 
-2. Clonar y Compilar
-Abre tu terminal y ejecuta los siguientes comandos para compilar la librería e instalarla de forma universal en tu sistema:
+*(Nota: CMake descargará automáticamente el núcleo de SDL 3 desde GitHub durante la compilación).*
 
+### 2. Clonar y Compilar
+
+Abre tu terminal y ejecuta los siguientes comandos para instalar la librería de forma universal en tu sistema:
+
+```bash
 # 1. Clonar el repositorio
-git clone https://github.com/TU_USUARIO/libgraph3.git
+git clone https://github.com/<TU_USUARIO>/libgraph3.git
 cd libgraph3
 
 # 2. Crear entorno de compilación
@@ -41,100 +52,133 @@ make
 # 4. Instalar en /usr/local/lib y /usr/local/include
 sudo make install
 
-3. Configuración Post-Instalación
-Como CMake descarga las librerías dinámicas de SDL3 al vuelo, necesitamos copiarlas al directorio principal de tu sistema para que el enlazador de Linux las encuentre siempre:
+```
 
-# Copiar las librerías dinámicas base respetando enlaces simbólicos
+### 3. Configuración Post-Instalación
+
+Para que el sistema operativo registre correctamente los enlaces dinámicos generados por CMake, ejecuta:
+
+```bash
+# Copiar las dependencias de SDL3 respetando enlaces simbólicos
 sudo find . -name "libSDL3*.so*" -exec cp -P {} /usr/local/lib/ \;
 
-# Actualizar la caché del sistema operativo
+# Actualizar la caché del enlazador de Linux
 sudo ldconfig
 
-💻 Guía de Uso
-Una vez instalada, puedes usar <libgraph3.h> desde cualquier directorio de tu computadora, tal como lo harías con las librerías estándar.
+```
 
-Ejemplo de código (main.c)
+---
+
+## 💻 Guía de Uso
+
+Puedes incluir `<libgraph3.h>` en cualquier directorio de tu computadora. Para compilar tu código, simplemente añade la bandera `-lgraph3` y `-lm` (para las funciones matemáticas de C).
+
+```bash
+gcc mi_juego.c -o juego -lgraph3 -lm
+./juego
+
+```
+
+### Ejemplo: Interfaz Dinámica y Floodfill
+
+```c
 #include <libgraph3.h>
-#include <stdio.h>
 
 int main() {
-    // 1. Inicializar la ventana
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
 
-    // 2. Configurar colores y limpiar pantalla
-    setbkcolor(DARKGRAY);
+    setbkcolor(LIGHTGRAY);
     cleardevice();
 
-    // 3. Dibujar geometría acelerada por GPU
-    setcolor(LIGHTBLUE);
-    rectangle(200, 250, 440, 450);
+    // 1. Uso de Medidores de Entorno
+    int cx = getmaxx() / 2;
+    int cy = getmaxy() / 2;
 
-    setcolor(LIGHTRED);
-    line(200, 250, 320, 150);
-    line(320, 150, 440, 250);
-
-    setcolor(WHITE);
-    circle(320, 320, 40);
-
-    // 4. Renderizar texto moderno
+    // 2. Geometría y Bote de Pintura (Floodfill)
     setcolor(YELLOW);
-    outtextxy(180, 400, "¡Emulando BGI en Linux Moderno!");
+    circle(cx - 40, cy, 60);
+    circle(cx + 40, cy, 60);
 
-    // 5. Esperar interacción sin bloquear el hilo principal
-    getch(); 
-    
-    // 6. Limpiar VRAM y cerrar
+    setfillstyle(SOLID_FILL, LIGHTBLUE);
+    floodfill(cx, cy, YELLOW); // Rellena la intersección de los círculos
+
+    // 3. Texto Dinámico Justificado
+    settextstyle(0, 0, 2); // Tamaño x2
+    settextjustify(CENTER_TEXT, BOTTOM_TEXT);
+    setcolor(BLACK);
+    outtextxy(cx, cy - 70, "GRAFICOS ACELERADOS");
+
+    // 4. Interacción en Tiempo Real
+    while (!kbhit()) {
+        // El programa corre libremente hasta presionar una tecla
+        delay(16);
+    }
+
+    getch(); // Limpia el buffer
     closegraph();
     
     return 0;
 }
 
-Cómo compilar tus programas
-Usa el compilador estándar (gcc o g++) y añade la bandera -lgraph3 al final:
+```
 
-# Para lenguaje C
-gcc main.c -o aplicacion -lgraph3
+---
 
-# Para lenguaje C++
-g++ main.cpp -o aplicacion -lgraph3
+## 📚 Referencia de la API (Funciones Portadas)
 
-# Ejecutar
-./aplicacion
+**Control del Sistema:**
 
-📚 Funciones Portadas
-Hasta el momento, libgraph3 soporta las siguientes llamadas clásicas:
+* `initgraph(int *gd, int *gm, const char *path)`
+* `closegraph()`
+* `delay(int millis)`
 
-Control del Sistema:
+**Lectura de Entorno y Estado (Getters):**
 
-initgraph(int *gd, int *gm, const char *path): Abre la ventana de SDL 3.
+* `getmaxx()`, `getmaxy()`
+* `getx()`, `gety()`
+* `getcolor()`, `getbkcolor()`
+* `textwidth(const char *text)`, `textheight(const char *text)`
 
-closegraph(): Libera recursos y cierra SDL.
+**Interacción (Teclado):**
 
-delay(int millis): Pausa asíncrona no bloqueante.
+* `kbhit()`: Verifica si hay teclas en cola sin pausar el hilo.
+* `getch()`: Captura la tecla presionada.
 
-getch(): Captura teclas de forma pasiva escuchando eventos del SO.
+**Cursor Gráfico (Current Pointer):**
 
-Color y Pincel:
+* `moveto(int x, int y)`
+* `lineto(int x, int y)`
+* `moverel(int dx, int dy)`
+* `linerel(int dx, int dy)`
 
-Soporte completo para la paleta BGI (Macros de BLACK a WHITE).
+**Geometría y Relleno:**
 
-setcolor(int color): Define color de líneas/texto.
+* `putpixel(int x, int y, int color)`
+* `line(int x1, int y1, int x2, int y2)`
+* `rectangle(int left, int top, int right, int bottom)`
+* `circle(int x, int y, int radius)`
+* `ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius)`
+* `arc(int x, int y, int stangle, int endangle, int radius)`
+* `drawpoly(int numpoints, int *polypoints)`
+* `bar(int left, int top, int right, int bottom)`
+* `floodfill(int x, int y, int border)`
 
-setbkcolor(int color): Define el fondo.
+**Colores y Estilos:**
 
-cleardevice(): Limpia la pantalla visualmente al instante.
+* `setcolor(int color)`
+* `setbkcolor(int color)`
+* `setfillstyle(int pattern, int color)`
+* `cleardevice()`
 
-Dibujo y Geometría:
+**Texto:**
 
-putpixel(int x, int y, int color)
+* `outtextxy(int x, int y, const char *text)`
+* `settextstyle(int font, int direction, int charsize)`
+* `settextjustify(int horiz, int vert)`
 
-line(int x1, int y1, int x2, int y2)
+**Memoria Visual (Sprites):**
 
-rectangle(int left, int top, int right, int bottom)
-
-circle(int x, int y, int radius) (Usa algoritmo de Bresenham optimizado para GPU)
-
-Texto:
-
-outtextxy(int x, int y, const char *text): Renderiza cadenas de caracteres en coordenadas específicas.
+* `imagesize(int left, int top, int right, int bottom)`
+* `getimage(int left, int top, int right, int bottom, void *bitmap)`
+* `putimage(int left, int top, void *bitmap, int op)`
