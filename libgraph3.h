@@ -48,6 +48,11 @@ int getch(void);
 /* Texto moderno */
 void outtextxy(int x, int y, const char *text);
 
+int getmaxx(void);
+int getmaxy(void);
+int textwidth(const char *text);
+int textheight(const char *text);
+
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }

@@ -147,3 +147,32 @@ void outtextxy(int x, int y, const char *text) {
     SDL_DestroyTexture(textTexture);
     SDL_DestroySurface(textSurface);
 }
+
+/* --- MEDIDORES DE ENTORNO --- */
+int getmaxx(void){
+    if(!window) return 0;
+    int w,h;
+    SDL_GetWindowSize(window, &w, &h);
+    return w - 1;
+}
+
+int getmaxy(void) {
+    if (!window) return 0;
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    return h - 1; 
+}
+
+int textwidth(const char *text) {
+    if (!default_font || !text) return 0;
+    int w = 0, h = 0;
+    TTF_GetStringSize(default_font, text, 0, &w, &h);
+    return w;
+}
+
+int textheight(const char *text) {
+    if (!default_font || !text) return 0;
+    int w = 0, h = 0;
+    TTF_GetStringSize(default_font, text, 0, &w, &h);
+    return h;
+}
