@@ -13,6 +13,8 @@ static int current_bkcolor = BLACK;
 static int cp_x = 0; 
 static int cp_y = 0; 
 
+static int key_buffer = 0;
+
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
     {0, 0, 0},       {0, 0, 170},     {0, 170, 0},     {0, 170, 170},
@@ -57,6 +59,26 @@ void closegraph(void) {
 
 void delay(int millis) {
     SDL_Delay(millis);
+}
+
+int kbhit(void) {
+    /* Si ya hay una tecla esperando en el buzón, avisamos que sí hay un "hit" */
+    if (key_buffer != 0) return 1;
+
+    SDL_Event event;
+    /* SDL_PollEvent revisa la cola de eventos al instante SIN pausar el programa */
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_EVENT_QUIT) {
+            key_buffer = 27; /* Simulamos la tecla ESC */
+            return 1;
+        }
+        if (event.type == SDL_EVENT_KEY_DOWN) {
+            /* Guardamos la tecla en el buzón para que getch() la recoja después */
+            key_buffer = (int)event.key.key;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int getch(void) {

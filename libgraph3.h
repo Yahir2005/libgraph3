@@ -49,6 +49,7 @@ void moverel(int dx, int dy);
 void linerel(int dx, int dy);
 
 /* Interacción y Eventos */
+int kbhit(void);
 int getch(void);
 
 /* Texto moderno */
