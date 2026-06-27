@@ -7,31 +7,31 @@ int main() {
     setbkcolor(DARKGRAY);
     cleardevice();
 
-    /* Calculamos el centro exacto de la pantalla usando los medidores */
-    int centro_x = getmaxx() / 2;
-    int centro_y = getmaxy() / 2;
+    /* Calculamos el centro usando nuestros medidores de la fase anterior */
+    int cx = getmaxx() / 2;
+    int cy = getmaxy() / 2;
 
-    /* Dibujamos una cruz que cruce toda la pantalla para comprobar los límites */
-    setcolor(LIGHTBLUE);
-    line(0, centro_y, getmaxx(), centro_y);
-    line(centro_x, 0, centro_x, getmaxy());
-
-    /* Preparamos el texto que queremos centrar */
-    const char* mensaje = "Este texto esta perfectamente centrado";
+    /* Dibujaremos una forma continua con lineto() */
+    setcolor(LIGHTGREEN);
     
-    /* Calculamos las coordenadas restando la mitad de lo que mide el texto */
-    int texto_x = centro_x - (textwidth(mensaje) / 2);
-    int texto_y = centro_y - (textheight(mensaje) / 2);
+    /* 1. Apoyamos el lápiz en la punta superior */
+    moveto(cx, cy - 100); 
+    
+    /* 2. Empezamos a trazar sin levantarlo */
+    lineto(cx + 40, cy - 20);
+    lineto(cx + 120, cy - 20);
+    lineto(cx + 50, cy + 30);
+    lineto(cx + 70, cy + 110);
+    lineto(cx, cy + 60);
+    lineto(cx - 70, cy + 110);
+    lineto(cx - 50, cy + 30);
+    lineto(cx - 120, cy - 20);
+    lineto(cx - 40, cy - 20);
+    lineto(cx, cy - 100); /* Cerramos la figura regresando al inicio */
 
-    /* Dibujamos un rectángulo amarillo alrededor del texto */
-    setcolor(YELLOW);
-    rectangle(texto_x - 10, texto_y - 10, 
-              texto_x + textwidth(mensaje) + 10, 
-              texto_y + textheight(mensaje) + 10);
-
-    /* Imprimimos el texto en su lugar exacto */
+    /* Agregamos algo de texto abajo */
     setcolor(WHITE);
-    outtextxy(texto_x, texto_y, mensaje);
+    outtextxy(cx - 120, cy + 140, "Un trazo continuo usando lineto()");
 
     getch(); 
     closegraph();

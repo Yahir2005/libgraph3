@@ -10,6 +10,9 @@ static TTF_Font* default_font = NULL;
 static int current_color = WHITE;
 static int current_bkcolor = BLACK;
 
+static int cp_x = 0; 
+static int cp_y = 0; 
+
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
     {0, 0, 0},       {0, 0, 170},     {0, 170, 0},     {0, 170, 170},
@@ -73,6 +76,9 @@ void cleardevice(void) {
     SDL_SetRenderDrawColor(renderer, bg.r, bg.g, bg.b, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);
+
+    cp_x = 0;
+    cp_y = 0;
 }
 
 void line(int x1, int y1, int x2, int y2) {
@@ -120,6 +126,7 @@ void circle(int xc, int yc, int r) {
     }
     SDL_RenderPresent(renderer);
 }
+
 
 /* --- LA NUEVA FUNCIÓN DE TEXTO --- */
 void outtextxy(int x, int y, const char *text) {
@@ -175,4 +182,33 @@ int textheight(const char *text) {
     int w = 0, h = 0;
     TTF_GetStringSize(default_font, text, 0, &w, &h);
     return h;
+}
+
+/* --- CURSOR GRÁFICO (CP) --- */
+
+void moveto(int x, int y) {
+    /* Simplemente levantamos el lápiz y lo movemos a la nueva coordenada */
+    cp_x = x;
+    cp_y = y;
+}
+
+void lineto(int x, int y) {
+    /* Dibujamos una línea desde donde está el lápiz hasta el nuevo punto */
+    line(cp_x, cp_y, x, y);
+    /* Actualizamos la posición del lápiz para que se quede en el final del trazo */
+    cp_x = x;
+    cp_y = y;
+}
+
+void moverel(int dx, int dy) {
+    /* Movemos el lápiz relativamente sumando a su posición actual */
+    cp_x += dx;
+    cp_y += dy;
+}
+
+void linerel(int dx, int dy) {
+    /* Dibujamos sumando a la posición actual */
+    line(cp_x, cp_y, cp_x + dx, cp_y + dy);
+    cp_x += dx;
+    cp_y += dy;
 }

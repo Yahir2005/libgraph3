@@ -42,6 +42,12 @@ void putpixel(int x, int y, int color);
 void rectangle(int left, int top, int right, int bottom);
 void circle(int x, int y, int radius);
 
+/*Cursor Gráfico */
+void moveto(int x, int y);
+void lineto(int x, int y);
+void moverel(int dx, int dy);
+void linerel(int dx, int dy);
+
 /* Interacción y Eventos */
 int getch(void);
 
