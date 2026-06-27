@@ -55,6 +55,11 @@ void circle(int x, int y, int radius);
 void setfillstyle(int pattern, int color);
 void bar(int left, int top, int right, int bottom);
 
+/* Figuras con Relleno */
+void setfillstyle(int pattern, int color);
+void bar(int left, int top, int right, int bottom);
+void floodfill(int x, int y, int border);
+
 /*Cursor Gráfico */
 void moveto(int x, int y);
 void lineto(int x, int y);

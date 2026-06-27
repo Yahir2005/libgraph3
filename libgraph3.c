@@ -3,6 +3,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdio.h>
 #include <math.h> /* Nueva cabecera para trigonometría */
+#include <stdlib.h> /* Necesario para la memoria dinámica del floodfill */
 
 #define PI 3.14159265358979323846
 
@@ -338,4 +339,84 @@ void bar(int left, int top, int right, int bottom) {
     /* SDL_RenderFillRect dibuja el rectángulo completamente coloreado por dentro */
     SDL_RenderFillRect(renderer, &rect);
     SDL_RenderPresent(renderer);
+}
+
+void floodfill(int x, int y, int border) {
+    /* 1. Descargamos la pantalla actual de la GPU a la RAM */
+    SDL_Surface* raw_surf = SDL_RenderReadPixels(renderer, NULL);
+    if (!raw_surf) return;
+
+    /* 2. Estandarizamos el formato a ARGB8888 para manipular los bits directamente */
+    SDL_Surface* surf = SDL_ConvertSurface(raw_surf, SDL_PIXELFORMAT_ARGB8888);
+    SDL_DestroySurface(raw_surf);
+    if (!surf) return;
+
+    int w = surf->w;
+    int h = surf->h;
+
+    /* Validamos que el clic inicial esté dentro de la pantalla */
+    if (x < 0 || x >= w || y < 0 || y >= h) {
+        SDL_DestroySurface(surf);
+        return;
+    }
+
+    /* 3. Preparamos los colores exactos a nivel de bit */
+    BGIColor fill_bgi = palette[current_fill_color];
+    Uint32 fill_color = (255 << 24) | (fill_bgi.r << 16) | (fill_bgi.g << 8) | fill_bgi.b;
+
+    BGIColor border_bgi = palette[border];
+    Uint32 target_border = (255 << 24) | (border_bgi.r << 16) | (border_bgi.g << 8) | border_bgi.b;
+
+    Uint32* pixels = (Uint32*)surf->pixels;
+    Uint32 start_color = pixels[y * w + x];
+
+    /* Si hacemos clic en un borde, o en un lugar que ya está pintado, abortamos */
+    if (start_color == target_border || start_color == fill_color) {
+        SDL_DestroySurface(surf);
+        return;
+    }
+
+    /* 4. Algoritmo DFS usando Pila Dinámica para no explotar la memoria de C */
+    int max_stack = w * h * 4; 
+    int* stack_x = (int*)malloc(max_stack * sizeof(int));
+    int* stack_y = (int*)malloc(max_stack * sizeof(int));
+    int stack_ptr = 0;
+
+    /* Metemos el punto inicial a la pila */
+    stack_x[stack_ptr] = x;
+    stack_y[stack_ptr] = y;
+    stack_ptr++;
+
+    while (stack_ptr > 0) {
+        stack_ptr--;
+        int cx = stack_x[stack_ptr];
+        int cy = stack_y[stack_ptr];
+
+        if (cx < 0 || cx >= w || cy < 0 || cy >= h) continue;
+
+        int idx = cy * w + cx;
+        Uint32 current_pixel = pixels[idx];
+
+        /* Si el píxel no es borde y no ha sido pintado, lo pintamos y revisamos sus vecinos */
+        if (current_pixel != target_border && current_pixel != fill_color) {
+            pixels[idx] = fill_color;
+            
+            /* Derecha, Izquierda, Abajo, Arriba */
+            stack_x[stack_ptr] = cx + 1; stack_y[stack_ptr] = cy; stack_ptr++;
+            stack_x[stack_ptr] = cx - 1; stack_y[stack_ptr] = cy; stack_ptr++;
+            stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy + 1; stack_ptr++;
+            stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy - 1; stack_ptr++;
+        }
+    }
+
+    free(stack_x);
+    free(stack_y);
+
+    /* 5. Subimos la textura terminada de regreso a la Tarjeta Gráfica */
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_RenderTexture(renderer, tex, NULL, NULL);
+    SDL_RenderPresent(renderer);
+
+    SDL_DestroyTexture(tex);
+    SDL_DestroySurface(surf);
 }
