@@ -138,8 +138,26 @@ def convert_asm(content):
 
 
 def convert_file(text):
+    placeholders = {}
+    counter = [0]
+
+    def save(s):
+        key = f'__ASM2C_COMMENT_{counter[0]}__'
+        counter[0] += 1
+        placeholders[key] = s
+        return key
+
+    text = re.sub(r'//[^\n]*', lambda m: save(m.group(0)), text)
+    text = re.sub(r'/\*.*?\*/', lambda m: save(m.group(0)), text, flags=re.DOTALL)
+    text = re.sub(r"'[^']*'", lambda m: save(m.group(0)), text)
+    text = re.sub(r'"[^"]*"', lambda m: save(m.group(0)), text)
+
     pattern = r'asm\s*\{([^}]*)\}'
-    return re.sub(pattern, lambda m: convert_asm(m.group(1)), text, flags=re.DOTALL)
+    result = re.sub(pattern, lambda m: convert_asm(m.group(1)), text, flags=re.DOTALL)
+
+    for key, val in placeholders.items():
+        result = result.replace(key, val)
+    return result
 
 
 def main():

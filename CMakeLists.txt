@@ -50,15 +50,22 @@ target_link_libraries(graph3 PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf m)
 target_include_directories(graph3 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ---------------------------------------------------------
-# 2. PROGRAMA DE PRUEBA (Opcional)
+# 2. PROGRAMAS DE EJEMPLO
 # ---------------------------------------------------------
-# Preprocesamos main.c para convertir asm{} a int86()
+
+# main.c — demo original de sprites
 set(MAIN_CONVERTED ${CMAKE_CURRENT_BINARY_DIR}/main_asmconv.c)
 preprocess_asm(${CMAKE_CURRENT_SOURCE_DIR}/main.c ${MAIN_CONVERTED})
-
 add_executable(programa ${MAIN_CONVERTED})
 target_link_libraries(programa PRIVATE graph3)
 target_include_directories(programa PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# ejemplo_hibrido.c — demo C + asm{} + libgraph3
+set(EJ_HIBRIDO_CONVERTED ${CMAKE_CURRENT_BINARY_DIR}/ejemplo_hibrido_asmconv.c)
+preprocess_asm(${CMAKE_CURRENT_SOURCE_DIR}/ejemplo_hibrido.c ${EJ_HIBRIDO_CONVERTED})
+add_executable(ejemplo_hibrido ${EJ_HIBRIDO_CONVERTED})
+target_link_libraries(ejemplo_hibrido PRIVATE graph3)
+target_include_directories(ejemplo_hibrido PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ---------------------------------------------------------
 # 3. REGLAS DE INSTALACIÓN (El nuevo 'sudo make install')
