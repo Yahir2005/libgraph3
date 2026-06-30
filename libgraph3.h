@@ -102,6 +102,12 @@ unsigned int imagesize(int left, int top, int right, int bottom);
 void getimage(int left, int top, int right, int bottom, void *bitmap);
 void putimage(int left, int top, void *bitmap, int op);
 
+/* Soporte para Ratón y UI */
+int ismouseclick(void);
+int mousex(void);
+int mousey(void);
+int button(int left, int top, int right, int bottom, const char *text);
+
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }

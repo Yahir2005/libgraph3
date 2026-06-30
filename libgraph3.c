@@ -27,6 +27,11 @@ static int current_text_horiz = LEFT_TEXT;
 static int current_text_vert = TOP_TEXT;
 static int current_text_size = 18; /* Tamaño por defecto en puntos */
 
+/* Estado del ratón */
+static int mouse_x = 0;
+static int mouse_y = 0;
+static int mouse_clicked = 0;
+
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
     {0, 0, 0},       {0, 0, 170},     {0, 170, 0},     {0, 170, 170},
@@ -73,34 +78,49 @@ void delay(int millis) {
     SDL_Delay(millis);
 }
 
-int kbhit(void) {
-    /* Si ya hay una tecla esperando en el buzón, avisamos que sí hay un "hit" */
-    if (key_buffer != 0) return 1;
+/* --- INTERACCIÓN Y EVENTOS --- */
 
+static void procesar_eventos(void) {
     SDL_Event event;
-    /* SDL_PollEvent revisa la cola de eventos al instante SIN pausar el programa */
+    /* Extraemos todos los eventos pendientes a máxima velocidad */
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) {
-            key_buffer = 27; /* Simulamos la tecla ESC */
-            return 1;
-        }
-        if (event.type == SDL_EVENT_KEY_DOWN) {
-            /* Guardamos la tecla en el buzón para que getch() la recoja después */
+            key_buffer = 27; /* ESC */
+        } else if (event.type == SDL_EVENT_KEY_DOWN) {
             key_buffer = (int)event.key.key;
-            return 1;
+        } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            /* Guardamos la coordenada exacta del clic */
+            mouse_x = (int)event.button.x;
+            mouse_y = (int)event.button.y;
+            mouse_clicked = 1; 
         }
     }
-    return 0;
+}
+
+int kbhit(void) {
+    procesar_eventos();
+    return (key_buffer != 0) ? 1 : 0;
 }
 
 int getch(void) {
-    SDL_Event event;
-    while (SDL_WaitEvent(&event)) {
-        if (event.type == SDL_EVENT_QUIT) return 27;
-        if (event.type == SDL_EVENT_KEY_DOWN) return (int)event.key.key;
+    while (key_buffer == 0) {
+        procesar_eventos();
+        SDL_Delay(10); /* Evita consumir el 100% del procesador */
     }
-    return 0;
+    int key = key_buffer;
+    key_buffer = 0; 
+    return key;
 }
+
+int ismouseclick(void) {
+    procesar_eventos();
+    int click = mouse_clicked;
+    mouse_clicked = 0; /* "Consumimos" el clic para que no se dispare dos veces seguidas */
+    return click;
+}
+
+int mousex(void) { return mouse_x; }
+int mousey(void) { return mouse_y; }
 
 void setcolor(int color) { if (color >= 0 && color <= 15) current_color = color; }
 void setbkcolor(int color) { if (color >= 0 && color <= 15) current_bkcolor = color; }
@@ -524,4 +544,51 @@ void putimage(int left, int top, void *bitmap, int op) {
         SDL_DestroyTexture(tex);
     }
     SDL_DestroySurface(surf);
+}
+
+/* --- INTERFAZ GRÁFICA (UI) --- */
+
+int button(int left, int top, int right, int bottom, const char *text) {
+    /* 1. Dibujamos el aspecto visual del botón */
+    int old_fill = current_fill_color;
+    int old_color = current_color;
+
+    /* Fondo */
+    setfillstyle(SOLID_FILL, LIGHTGRAY);
+    bar(left, top, right, bottom);
+    
+    /* Borde superior/izquierdo claro (Efecto relieve 3D) */
+    setcolor(WHITE); 
+    line(left, top, right, top);
+    line(left, top, left, bottom);
+    
+    /* Borde inferior/derecho oscuro (Sombra) */
+    setcolor(DARKGRAY); 
+    line(right, bottom, right, top);
+    line(right, bottom, left, bottom);
+
+    /* Texto centrado */
+    setcolor(BLACK);
+    int cx = left + ((right - left) / 2);
+    int cy = top + ((bottom - top) / 2);
+    
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
+    
+    outtextxy(cx, cy, text);
+    
+    /* Restauramos los ajustes que tenía el usuario antes de llamar al botón */
+    settextjustify(old_horiz, old_vert);
+    setfillstyle(SOLID_FILL, old_fill);
+    setcolor(old_color);
+
+    /* 2. Lógica matemática de colisión (El corazón de la función) */
+    if (ismouseclick()) {
+        if (mouse_x >= left && mouse_x <= right && mouse_y >= top && mouse_y <= bottom) {
+            return 1; /* ¡Se hizo clic dentro del cuadro! */
+        }
+    }
+    
+    return 0; /* No se hizo clic, o el clic fue fuera de este botón */
 }
