@@ -592,3 +592,97 @@ int button(int left, int top, int right, int bottom, const char *text) {
     
     return 0; /* No se hizo clic, o el clic fue fuera de este botón */
 }
+
+/* --- CUADROS DE DIÁLOGO (UI) --- */
+
+int inputdialog_int(const char *prompt) {
+    /* 1. Calculamos las coordenadas del cuadro centrado en pantalla */
+    int cx = getmaxx() / 2;
+    int cy = getmaxy() / 2;
+    int w = 320, h = 140;
+    int left = cx - w/2, top = cy - h/2, right = cx + w/2, bottom = cy + h/2;
+
+    /* 2. MAGIA: Tomamos una "foto" del fondo para no arruinar el diseño del usuario */
+    unsigned int bg_size = imagesize(left, top, right, bottom);
+    void *bg_saved = NULL;
+    if (bg_size > 0) {
+        bg_saved = malloc(bg_size);
+        if (bg_saved) getimage(left, top, right, bottom, bg_saved);
+    }
+
+    /* Variables para capturar el texto */
+    char input_buffer[20] = ""; /* Buffer para guardar lo que se teclea */
+    int buf_len = 0;
+    int typing = 1;
+
+    /* Guardamos la configuración de color actual para no alterarla */
+    int old_fill = current_fill_color;
+    int old_color = current_color;
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
+
+    /* 3. BUCLE DEL DIÁLOGO (Se queda atrapado aquí hasta presionar ENTER) */
+    while (typing) {
+        /* Dibujamos la ventana flotante */
+        setfillstyle(SOLID_FILL, LIGHTGRAY);
+        bar(left, top, right, bottom);
+        
+        /* Bordes 3D */
+        setcolor(WHITE);
+        line(left, top, right, top); line(left, top, left, bottom);
+        setcolor(DARKGRAY);
+        line(right, bottom, right, top); line(right, bottom, left, bottom);
+
+        /* Imprimimos el mensaje (prompt) */
+        setcolor(BLACK);
+        outtextxy(cx, cy - 30, prompt);
+
+        /* Dibujamos la caja de texto (Input) */
+        setfillstyle(SOLID_FILL, WHITE);
+        bar(cx - 100, cy + 5, cx + 100, cy + 35);
+        setcolor(DARKGRAY);
+        line(cx - 100, cy + 5, cx + 100, cy + 5); line(cx - 100, cy + 5, cx - 100, cy + 35);
+
+        /* Mostramos lo que el usuario está escribiendo en tiempo real */
+        setcolor(BLACK);
+        outtextxy(cx, cy + 20, input_buffer);
+
+        /* 4. ESCUCHAMOS EL TECLADO */
+        int key = getch(); /* Pausa hasta que presionen algo */
+
+        if (key == '\r' || key == '\n' || key == 13) {
+            typing = 0; /* ENTER: Sale del bucle */
+        } 
+        else if (key == '\b' || key == 8) { 
+            /* BACKSPACE (Borrar) */
+            if (buf_len > 0) {
+                buf_len--;
+                input_buffer[buf_len] = '\0';
+            }
+        } 
+        else if (buf_len < 18) {
+            /* Solo permitimos números del 0 al 9, y el signo menos al inicio */
+            if ((key >= '0' && key <= '9') || (key == '-' && buf_len == 0)) {
+                input_buffer[buf_len] = (char)key;
+                buf_len++;
+                input_buffer[buf_len] = '\0'; /* Mantiene el string bien cerrado en C */
+            }
+        }
+    }
+
+    /* 5. Restauramos el fondo como si el cuadro nunca hubiera existido */
+    if (bg_saved) {
+        putimage(left, top, bg_saved, COPY_PUT);
+        free(bg_saved);
+    }
+
+    /* Restauramos los estilos de la librería */
+    settextjustify(old_horiz, old_vert);
+    setfillstyle(SOLID_FILL, old_fill);
+    setcolor(old_color);
+
+    /* 6. Retornamos la conversión matemática pura (String -> Integer) */
+    return atoi(input_buffer);
+}

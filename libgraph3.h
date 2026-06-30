@@ -108,6 +108,9 @@ int mousex(void);
 int mousey(void);
 int button(int left, int top, int right, int bottom, const char *text);
 
+/* Cuadros de Diálogo (UI) */
+int inputdialog_int(const char *prompt);
+
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }
