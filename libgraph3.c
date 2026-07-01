@@ -798,3 +798,85 @@ int slider(int x, int y, int len, const char *text, int *valor) {
 
     return 0;
 }
+
+int textfield(int x, int y, int width, char *buffer, int max_len, int *is_focused) {
+    int h = 30; 
+    
+    int old_color = current_color;
+    int old_fill = current_fill_color;
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+
+    /* 1. LÓGICA DE FOCO */
+    if (ismouseclick()) {
+        if (mousex() >= x && mousex() <= x + width && 
+            mousey() >= y && mousey() <= y + h) {
+            *is_focused = 1; 
+            clearmouseclick();
+        } else if (*is_focused == 1) {
+            *is_focused = 0; 
+        }
+    }
+
+    /* 2. LÓGICA DE TECLADO (INDEPENDIENTE) */
+    /* En vez de llamar a kbhit(), leemos directamente la memoria del motor */
+    if (*is_focused) {
+        if (key_buffer != 0) {
+            int key = key_buffer;
+            
+            /* Si es ESC (27), no la consumimos para que el bucle principal pueda salir */
+            if (key != 27) {
+                key_buffer = 0; /* Consumimos la tecla en silencio */
+                
+                int len = 0;
+                while (buffer[len] != '\0') len++;
+
+                /* Retroceso (Backspace) */
+                if ((key == '\b' || key == 8) && len > 0) {
+                    buffer[len - 1] = '\0';
+                } 
+                /* Caracteres imprimibles */
+                else if (key >= 32 && key <= 126 && len < max_len - 1) {
+                    buffer[len] = (char)key;
+                    buffer[len + 1] = '\0'; 
+                }
+            }
+        }
+    }
+
+    /* 3. DIBUJADO DEL COMPONENTE */
+    setfillstyle(SOLID_FILL, WHITE);
+    bar(x, y, x + width, y + h);
+
+    if (*is_focused) {
+        setcolor(BLUE);
+    } else {
+        setcolor(DARKGRAY);
+    }
+    
+    line(x, y, x + width, y);
+    line(x, y, x, y + h);
+    line(x, y + h, x + width, y + h);
+    line(x + width, y, x + width, y + h);
+
+    /* 4. DIBUJADO DEL TEXTO */
+    setcolor(BLACK);
+    settextjustify(LEFT_TEXT, CENTER_TEXT);
+    outtextxy(x + 8, y + (h / 2), buffer);
+
+    /* 5. CURSOR PARPADEANTE */
+    if (*is_focused) {
+        int text_w = textwidth(buffer);
+        if ((SDL_GetTicks() / 500) % 2 == 0) {
+            setcolor(BLACK);
+            line(x + 8 + text_w + 2, y + 6, x + 8 + text_w + 2, y + h - 6);
+        }
+    }
+
+    /* Restauramos entorno */
+    setcolor(old_color);
+    setfillstyle(SOLID_FILL, old_fill);
+    settextjustify(old_horiz, old_vert);
+
+    return *is_focused;
+}

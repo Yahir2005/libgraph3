@@ -108,6 +108,7 @@ int button(int left, int top, int right, int bottom, const char *text);
 int checkbox(int x, int y, const char *text, int *estado);
 void progressbar(int left, int top, int right, int bottom, int porcentaje);
 int slider(int x, int y, int len, const char *text, int *valor);
+int textfield(int x, int y, int width, char *buffer, int max_len, int *is_focused);
 
 /* Cuadros de Diálogo (UI) */
 int inputdialog_int(const char *prompt);

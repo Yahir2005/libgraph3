@@ -4,32 +4,39 @@
 int main() {
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
+    setbkcolor(LIGHTGRAY);
 
-    setbkcolor(DARKGRAY);
+    /* Variables de estado para los Text Fields */
+    char usuario[50] = "";
+    int foco_usuario = 0;
 
-    /* La variable maestra (El "estado" en arquitectura de UI) */
-    int volumen_actual = 50; 
-    char texto_estado[50];
+    char clave[50] = "";
+    int foco_clave = 0;
 
-    while (!kbhit()) {
+    while (!kbhit() || foco_usuario || foco_clave) {
         cleardevice();
 
-        setcolor(YELLOW);
+        setcolor(BLACK);
         settextjustify(CENTER_TEXT, TOP_TEXT);
-        outtextxy(getmaxx() / 2, 50, "Controles de Audio");
+        outtextxy(getmaxx() / 2, 50, "Portal de Acceso");
 
-        /* 1. Dibujamos el Slider, le pasamos la longitud (200px) y la variable */
-        slider(200, 150, 200, "Volumen Maestro", &volumen_actual);
+        /* Etiquetas */
+        settextjustify(LEFT_TEXT, CENTER_TEXT);
+        outtextxy(150, 135, "Usuario:");
+        outtextxy(150, 185, "PIN:");
 
-        /* 2. Visualizamos el cambio en tiempo real con la barra que hicimos antes */
-        progressbar(200, 250, 400, 280, volumen_actual);
+        /* Renderizamos los Text Fields 
+           Pasamos el buffer, el límite máximo de caracteres y la variable de foco */
+        textfield(250, 120, 200, usuario, 20, &foco_usuario);
+        textfield(250, 170, 200, clave, 20, &foco_clave);
 
-        /* 3. Mostrar el valor exacto para debuggear */
-        sprintf(texto_estado, "Nivel en memoria: %d", volumen_actual);
-        setcolor(WHITE);
-        outtextxy(getmaxx() / 2, 320, texto_estado);
+        /* Botón de validación que lee lo escrito en los buffers */
+        if (button(250, 230, 450, 270, "ENTRAR")) {
+            printf("Intentando login con: %s / %s\n", usuario, clave);
+        }
 
-        delay(16); 
+        delay(16); // ~60 FPS
+        
         if (ismouseclick()) clearmouseclick(); 
     }
 
