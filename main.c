@@ -1,52 +1,38 @@
 #include <libgraph3.h>
+#include <stdio.h>
 
 int main() {
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
 
-    setbkcolor(BLUE);
+    setbkcolor(DARKGRAY);
 
-    int progreso = 0;
-    int cargando = 1;
+    /* La variable maestra (El "estado" en arquitectura de UI) */
+    int volumen_actual = 50; 
+    char texto_estado[50];
 
-    /* --- PANTALLA DE CARGA --- */
-    while (!kbhit() && cargando) {
+    while (!kbhit()) {
         cleardevice();
 
+        setcolor(YELLOW);
+        settextjustify(CENTER_TEXT, TOP_TEXT);
+        outtextxy(getmaxx() / 2, 50, "Controles de Audio");
+
+        /* 1. Dibujamos el Slider, le pasamos la longitud (200px) y la variable */
+        slider(200, 150, 200, "Volumen Maestro", &volumen_actual);
+
+        /* 2. Visualizamos el cambio en tiempo real con la barra que hicimos antes */
+        progressbar(200, 250, 400, 280, volumen_actual);
+
+        /* 3. Mostrar el valor exacto para debuggear */
+        sprintf(texto_estado, "Nivel en memoria: %d", volumen_actual);
         setcolor(WHITE);
-        settextjustify(CENTER_TEXT, BOTTOM_TEXT);
-        outtextxy(getmaxx() / 2, 200, "Iniciando sistema. Por favor espere...");
+        outtextxy(getmaxx() / 2, 320, texto_estado);
 
-        progressbar(120, 220, 520, 250, progreso);
-
-        progreso += 1;
-        
-        if (progreso > 100) {
-            /* Hacemos que se detenga medio segundo para que el usuario VEA el 100% */
-            delay(500); 
-            cargando = 0; 
-        }
-
-        delay(40);
-        if (ismouseclick()) clearmouseclick();
+        delay(16); 
+        if (ismouseclick()) clearmouseclick(); 
     }
 
-    /* Limpiamos la basura del teclado por si el usuario presionó algo mientras cargaba */
-    if (kbhit()) getch(); 
-
-    /* --- PANTALLA FINAL (Corregida contra el parpadeo) --- */
-    /* Todo el dibujo va DENTRO del bucle para que actualice ambos búferes de la GPU */
-    while(!kbhit()) { 
-        cleardevice();
-        
-        setcolor(LIGHTGREEN);
-        settextjustify(CENTER_TEXT, CENTER_TEXT);
-        outtextxy(getmaxx() / 2, getmaxy() / 2, "¡Carga Completada!");
-        outtextxy(getmaxx() / 2, getmaxy() / 2 + 40, "Presiona una tecla para salir...");
-        
-        delay(30); 
-    }
-    
     closegraph();
     return 0;
 }

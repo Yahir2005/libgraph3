@@ -30,6 +30,7 @@ static int current_text_size = 18;
 static int mouse_x = 0;
 static int mouse_y = 0;
 static int mouse_clicked = 0;
+static int mouse_down = 0;
 
 typedef struct { Uint8 r, g, b; } BGIColor;
 static BGIColor palette[16] = {
@@ -120,6 +121,21 @@ int ismouseclick(void) {
 
 void clearmouseclick(void) {
     mouse_clicked = 0; 
+}
+
+int ismousedown(void) {
+    float live_x, live_y;
+    /* Extrae el estado actual de los botones y las coordenadas sin tocar la cola de eventos */
+    SDL_MouseButtonFlags estado_botones = SDL_GetMouseState(&live_x, &live_y);
+    
+    /* Si el botón izquierdo (L) está presionado, actualizamos la memoria */
+    if (estado_botones & SDL_BUTTON_LMASK) {
+        mouse_x = (int)live_x;
+        mouse_y = (int)live_y;
+        return 1;
+    }
+    
+    return 0;
 }
 
 int mousex(void) { return mouse_x; }
@@ -718,4 +734,67 @@ void progressbar(int left, int top, int right, int bottom, int porcentaje) {
     setcolor(old_color);
     setfillstyle(SOLID_FILL, old_fill);
     settextjustify(old_horiz, old_vert);
+}
+
+int slider(int x, int y, int len, const char *text, int *valor) {
+    /* Protección matemática para la variable en memoria */
+    if (*valor < 0) *valor = 0;
+    if (*valor > 100) *valor = 100;
+
+    int old_color = current_color;
+    int old_fill = current_fill_color;
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+
+    /* Dibujamos el carril (riel) del slider */
+    setcolor(DARKGRAY);
+    line(x, y + 10, x + len, y + 10);
+    setcolor(WHITE);
+    line(x, y + 11, x + len, y + 11);
+
+    /* Calculamos la coordenada X de la manija basada en el valor actual */
+    int thumb_x = x + (len * (*valor)) / 100;
+
+    /* Dibujamos la manija (Thumb) */
+    setfillstyle(SOLID_FILL, LIGHTGRAY);
+    bar(thumb_x - 5, y, thumb_x + 5, y + 20);
+    
+    /* Bordes 3D de la manija */
+    setcolor(WHITE); 
+    line(thumb_x - 5, y, thumb_x + 5, y); 
+    line(thumb_x - 5, y, thumb_x - 5, y + 20);
+    setcolor(DARKGRAY); 
+    line(thumb_x - 5, y + 20, thumb_x + 5, y + 20); 
+    line(thumb_x + 5, y, thumb_x + 5, y + 20);
+
+    /* Texto descriptivo a la derecha */
+    setcolor(WHITE);
+    settextjustify(LEFT_TEXT, TOP_TEXT);
+    outtextxy(x + len + 15, y + 2, text);
+
+    /* --- LÓGICA DE ARRASTRE (DRAG) --- */
+    /* Utilizamos nuestro nuevo método independiente */
+    if (ismousedown()) {
+        /* Ampliamos el área de detección ('hitbox') para que sea fácil de agarrar */
+        if (mousex() >= x && mousex() <= x + len && 
+            mousey() >= y - 10 && mousey() <= y + 30) {
+            
+            /* Regla de tres simple para convertir pixeles a un porcentaje (0-100) */
+            float proporcion = (float)(mousex() - x) / (float)len;
+            *valor = (int)(proporcion * 100.0f);
+            
+            if (*valor < 0) *valor = 0;
+            if (*valor > 100) *valor = 100;
+            
+            /* Retornamos 1 indicando que el slider fue manipulado en este fotograma */
+            return 1; 
+        }
+    }
+
+    /* Restauramos los ajustes visuales */
+    setcolor(old_color);
+    setfillstyle(SOLID_FILL, old_fill);
+    settextjustify(old_horiz, old_vert);
+
+    return 0;
 }

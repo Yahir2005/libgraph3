@@ -101,16 +101,17 @@ void putimage(int left, int top, void *bitmap, int op);
 /* Soporte para Ratón y UI */
 int ismouseclick(void);
 void clearmouseclick(void);
+int ismousedown(void);
 int mousex(void);
 int mousey(void);
 int button(int left, int top, int right, int bottom, const char *text);
 int checkbox(int x, int y, const char *text, int *estado);
+void progressbar(int left, int top, int right, int bottom, int porcentaje);
+int slider(int x, int y, int len, const char *text, int *valor);
 
 /* Cuadros de Diálogo (UI) */
 int inputdialog_int(const char *prompt);
 
-/*Barra de progresor*/
-void progressbar(int left, int top, int right, int bottom, int porcentaje);
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }
