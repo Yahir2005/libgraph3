@@ -1,38 +1,50 @@
-#include "libgraph3.h"
-#include <stdio.h>
+#include <libgraph3.h>
+#include <stdio.h>   // para printf
 
 int main() {
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
 
-    setbkcolor(BLUE);
-    cleardevice();
+    int aceptar_terminos = 0;
+    int recibir_correos = 1;   // marcado por defecto
 
-    /* 1. Ponemos algunas cosas de fondo para comprobar que no se borran */
-    setcolor(YELLOW);
-    circle(100, 100, 50);
-    setfillstyle(SOLID_FILL, LIGHTGREEN);
-    bar(400, 300, 600, 400);
+    setbkcolor(DARKGRAY);
 
-    /* 2. Llamamos a tu equivalente de JOptionPane (Frena el programa aquí) */
-    int edad = inputdialog_int("Ingrese su edad actual (solo numeros):");
+    while (!kbhit()) {
+        cleardevice();
 
-    /* 3. El cuadro ya desapareció. Hacemos algo con el Integer resultante */
-    int ano_nacimiento = 2026 - edad;
+        setcolor(YELLOW);
+        outtextxy(50, 50, "Formulario de Registro");
 
-    /* 4. Mostramos el resultado */
-    char mensaje_final[100];
-    sprintf(mensaje_final, "Tu naciste aproximadamente en el ano %d", ano_nacimiento);
-    
-    settextstyle(0, 0, 2);
-    settextjustify(CENTER_TEXT, CENTER_TEXT);
-    setcolor(WHITE);
-    outtextxy(getmaxx() / 2, getmaxy() / 2, mensaje_final);
-    
-    outtextxy(getmaxx() / 2, getmaxy() - 50, "Presiona una tecla para salir...");
+        // Dibujamos los checkboxes
+        checkbox(50, 100, "Acepto los terminos y condiciones", &aceptar_terminos);
+        checkbox(50, 140, "Deseo recibir correos con ofertas", &recibir_correos);
 
-    getch(); 
+        // Mostramos el estado actual de las variables en la pantalla (depuración)
+        char buffer[100];
+        sprintf(buffer, "Aceptar: %d  |  Correos: %d", aceptar_terminos, recibir_correos);
+        setcolor(WHITE);
+        outtextxy(50, 300, buffer);
+
+        if (aceptar_terminos) {
+            if (button(50, 200, 150, 240, "REGISTRAR")) {
+                // Aquí podrías poner un mensaje o acción
+                setcolor(GREEN);
+                outtextxy(50, 270, "¡Registro exitoso! (simulado)");
+            }
+        } else {
+            setcolor(LIGHTRED);
+            outtextxy(50, 210, "Debes aceptar los terminos para continuar.");
+        }
+
+        delay(60);
+
+        // Limpiamos clics no consumidos (importante)
+        if (ismouseclick()) {
+            clearmouseclick();
+        }
+    }
+
     closegraph();
-    
     return 0;
 }

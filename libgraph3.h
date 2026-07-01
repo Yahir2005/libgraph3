@@ -64,13 +64,9 @@ void circle(int x, int y, int radius);
 /* Figuras con Relleno */
 void setfillstyle(int pattern, int color);
 void bar(int left, int top, int right, int bottom);
-
-/* Figuras con Relleno */
-void setfillstyle(int pattern, int color);
-void bar(int left, int top, int right, int bottom);
 void floodfill(int x, int y, int border);
 
-/*Cursor Gráfico */
+/* Cursor Gráfico */
 void moveto(int x, int y);
 void lineto(int x, int y);
 void moverel(int dx, int dy);
@@ -104,9 +100,11 @@ void putimage(int left, int top, void *bitmap, int op);
 
 /* Soporte para Ratón y UI */
 int ismouseclick(void);
+void clearmouseclick(void);
 int mousex(void);
 int mousey(void);
 int button(int left, int top, int right, int bottom, const char *text);
+int checkbox(int x, int y, const char *text, int *estado);
 
 /* Cuadros de Diálogo (UI) */
 int inputdialog_int(const char *prompt);
