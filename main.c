@@ -1,50 +1,52 @@
 #include <libgraph3.h>
-#include <stdio.h>   // para printf
 
 int main() {
     int gd = DETECT, gm = 0;
     initgraph(&gd, &gm, "");
 
-    int aceptar_terminos = 0;
-    int recibir_correos = 1;   // marcado por defecto
+    setbkcolor(BLUE);
 
-    setbkcolor(DARKGRAY);
+    int progreso = 0;
+    int cargando = 1;
 
-    while (!kbhit()) {
+    /* --- PANTALLA DE CARGA --- */
+    while (!kbhit() && cargando) {
         cleardevice();
 
-        setcolor(YELLOW);
-        outtextxy(50, 50, "Formulario de Registro");
-
-        // Dibujamos los checkboxes
-        checkbox(50, 100, "Acepto los terminos y condiciones", &aceptar_terminos);
-        checkbox(50, 140, "Deseo recibir correos con ofertas", &recibir_correos);
-
-        // Mostramos el estado actual de las variables en la pantalla (depuración)
-        char buffer[100];
-        sprintf(buffer, "Aceptar: %d  |  Correos: %d", aceptar_terminos, recibir_correos);
         setcolor(WHITE);
-        outtextxy(50, 300, buffer);
+        settextjustify(CENTER_TEXT, BOTTOM_TEXT);
+        outtextxy(getmaxx() / 2, 200, "Iniciando sistema. Por favor espere...");
 
-        if (aceptar_terminos) {
-            if (button(50, 200, 150, 240, "REGISTRAR")) {
-                // Aquí podrías poner un mensaje o acción
-                setcolor(GREEN);
-                outtextxy(50, 270, "¡Registro exitoso! (simulado)");
-            }
-        } else {
-            setcolor(LIGHTRED);
-            outtextxy(50, 210, "Debes aceptar los terminos para continuar.");
+        progressbar(120, 220, 520, 250, progreso);
+
+        progreso += 1;
+        
+        if (progreso > 100) {
+            /* Hacemos que se detenga medio segundo para que el usuario VEA el 100% */
+            delay(500); 
+            cargando = 0; 
         }
 
-        delay(60);
-
-        // Limpiamos clics no consumidos (importante)
-        if (ismouseclick()) {
-            clearmouseclick();
-        }
+        delay(40);
+        if (ismouseclick()) clearmouseclick();
     }
 
+    /* Limpiamos la basura del teclado por si el usuario presionó algo mientras cargaba */
+    if (kbhit()) getch(); 
+
+    /* --- PANTALLA FINAL (Corregida contra el parpadeo) --- */
+    /* Todo el dibujo va DENTRO del bucle para que actualice ambos búferes de la GPU */
+    while(!kbhit()) { 
+        cleardevice();
+        
+        setcolor(LIGHTGREEN);
+        settextjustify(CENTER_TEXT, CENTER_TEXT);
+        outtextxy(getmaxx() / 2, getmaxy() / 2, "¡Carga Completada!");
+        outtextxy(getmaxx() / 2, getmaxy() / 2 + 40, "Presiona una tecla para salir...");
+        
+        delay(30); 
+    }
+    
     closegraph();
     return 0;
 }

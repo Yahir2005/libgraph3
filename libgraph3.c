@@ -664,3 +664,58 @@ int inputdialog_int(const char *prompt) {
 
     return atoi(input_buffer);
 }
+
+void progressbar(int left, int top, int right, int bottom, int porcentaje) {
+    /* 1. Protección contra desbordamientos matemáticos */
+    if (porcentaje < 0) porcentaje = 0;
+    if (porcentaje > 100) porcentaje = 100;
+
+    int old_color = current_color;
+    int old_fill = current_fill_color;
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+
+    /* 2. Dibujamos el "carril" vacío de la barra (Gris oscuro) */
+    setfillstyle(SOLID_FILL, DARKGRAY);
+    bar(left, top, right, bottom);
+
+    /* Bordes estilo hundido (3D inverso) */
+    setcolor(LIGHTGRAY);
+    line(left, bottom, right, bottom);
+    line(right, top, right, bottom);
+    setcolor(BLACK);
+    line(left, top, right, top);
+    line(left, top, left, bottom);
+
+    /* 3. Calculamos y dibujamos el relleno (Verde) */
+    if (porcentaje > 0) {
+        /* Calculamos el ancho disponible quitando 2 píxeles de los bordes */
+        int ancho_total = (right - left) - 2;
+        int ancho_relleno = (ancho_total * porcentaje) / 100;
+        
+        setfillstyle(SOLID_FILL, LIGHTGREEN);
+        bar(left + 1, top + 1, left + 1 + ancho_relleno, bottom - 1);
+    }
+
+    /* 4. Dibujamos el texto del porcentaje centrado */
+    char texto_porcentaje[10];
+    sprintf(texto_porcentaje, "%d%%", porcentaje);
+    
+    int cx = left + ((right - left) / 2);
+    int cy = top + ((bottom - top) / 2);
+    
+    /* Si el relleno ya pasó la mitad, el texto se vuelve negro para contrastar con el verde */
+    if (porcentaje > 50) {
+        setcolor(BLACK);
+    } else {
+        setcolor(WHITE);
+    }
+
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
+    outtextxy(cx, cy, texto_porcentaje);
+
+    /* 5. Restauramos el entorno */
+    setcolor(old_color);
+    setfillstyle(SOLID_FILL, old_fill);
+    settextjustify(old_horiz, old_vert);
+}

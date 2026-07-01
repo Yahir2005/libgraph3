@@ -109,6 +109,8 @@ int checkbox(int x, int y, const char *text, int *estado);
 /* Cuadros de Diálogo (UI) */
 int inputdialog_int(const char *prompt);
 
+/*Barra de progresor*/
+void progressbar(int left, int top, int right, int bottom, int porcentaje);
 /* Cerramos el bloque extern "C" si estamos en C++ */
 #ifdef __cplusplus
 }
