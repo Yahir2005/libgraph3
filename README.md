@@ -10,117 +10,76 @@ Este proyecto nace para ayudar a estudiantes de ingeniería de software y entusi
 
 ## ✨ Características Principales
 
-* **100% Acelerada por Hardware:** Las primitivas geométricas envían instrucciones directas a la tarjeta gráfica mediante SDL 3.
-* **Geometría y Relleno Avanzados:** Soporte para polígonos, trigonometría (elipses/arcos) y un motor de relleno (`floodfill`) que cruza eficientemente la GPU y la CPU usando DFS iterativo.
-* **Memoria Visual (Sprites):** Soporte nativo para capturar y pegar porciones de la VRAM (`getimage` / `putimage`) a 60 FPS, ideal para videojuegos retro.
+* **100% Acelerada por Hardware (Anti-Flicker):** Las primitivas geométricas envían instrucciones directas a la tarjeta gráfica mediante SDL 3. Utiliza una textura persistente como memoria de video para garantizar **cero parpadeos** (*flickering*) en animaciones.
+* **True Color y Retrocompatibilidad:** Utiliza la nueva macro `COLOR(r,g,b)` para renderizar millones de colores, mientras mantiene la compatibilidad 100% estricta con los clásicos colores DOS (`YELLOW`, `RED`, etc.) de Turbo C.
+* **Resoluciones HD:** Soporte para resoluciones dinámicas mediante `initwindow(width, height)`.
+* **Carga de Imágenes (Sprites):** Soporte para capturar y pegar porciones de la VRAM (`getimage` / `putimage`), y para cargar archivos gráficos externos (`readimagefile`) ideal para videojuegos retro.
 * **Teclado Asíncrono:** Funciones como `kbhit()` permiten leer el teclado en tiempo real sin bloquear la ejecución del programa.
-* **Tipografía Dinámica:** Motor de texto TrueType (`SDL3_ttf`) con escalado al vuelo, justificación matemática y anti-aliasing.
-* **Bilingüe (C y C++):** Compatible con `gcc` y `g++` gracias a su integración `extern "C"`.
+* **Tipografía Dinámica e Independiente:** Motor de texto TrueType (`SDL3_ttf`) con escalado al vuelo. Descarga automáticamente una fuente libre durante la instalación, asegurando total portabilidad.
+* **Interfaz Gráfica Integrada:** Soporte para widgets como `button`, `slider`, `progressbar`, `checkbox`, y detección fácil del ratón.
 
 ---
 
-## 🛠️ Instalación
+## 🛠️ Instalación Rápida (Un Clic)
 
-### 1. Dependencias Previas
+Todo el proceso de descarga de dependencias, compilación, e instalación en el sistema operativo ha sido automatizado en un único *script* inteligente. Soporta **Debian/Ubuntu, Fedora y macOS**.
 
-En distribuciones basadas en Debian/Ubuntu, instala las herramientas de compilación y dependencias de ventanas/fuentes:
-
-```bash
-sudo apt update
-sudo apt install build-essential cmake git libfreetype-dev libharfbuzz-dev libx11-dev libwayland-dev libxkbcommon-dev libxext-dev libxrender-dev libxcursor-dev libxi-dev libxfixes-dev libxrandr-dev libxss-dev libxtst-dev
-
-```
-
-*(Nota: CMake descargará automáticamente el núcleo de SDL 3 desde GitHub durante la compilación).*
-
-### 2. Clonar y Compilar
-
-Abre tu terminal y ejecuta los siguientes comandos para instalar la librería de forma universal en tu sistema:
+Abre tu terminal y ejecuta:
 
 ```bash
 # 1. Clonar el repositorio
 git clone https://github.com/<TU_USUARIO>/libgraph3.git
 cd libgraph3
 
-# 2. Crear entorno de compilación
-mkdir build && cd build
-cmake ..
-
-# 3. Compilar la librería compartida (.so)
-make
-
-# 4. Instalar en /usr/local/lib y /usr/local/include
-sudo make install
-
+# 2. Ejecutar el Instalador
+chmod +x install.sh
+./install.sh
 ```
 
-### 3. Configuración Post-Instalación
-
-Para que el sistema operativo registre correctamente los enlaces dinámicos generados por CMake, ejecuta:
-
-```bash
-# Copiar las dependencias de SDL3 respetando enlaces simbólicos
-sudo find . -name "libSDL3*.so*" -exec cp -P {} /usr/local/lib/ \;
-
-# Actualizar la caché del enlazador de Linux
-sudo ldconfig
-
-```
+El instalador te preguntará si deseas bajar las dependencias (como `cmake`, `git` o herramientas X11/Wayland), descargará las fuentes necesarias, compilará la librería, instalará los binarios en tu sistema e inyectará el atajo universal de compilación.
 
 ---
 
 ## 💻 Guía de Uso
 
-Puedes incluir `<libgraph3.h>` en cualquier directorio de tu computadora. Para compilar tu código, simplemente añade la bandera `-lgraph3` y `-lm` (para las funciones matemáticas de C).
+Ya no tienes que escribir pesadas instrucciones `gcc` incluyendo el motor de SDL.
+Gracias a que `install.sh` registra un comando global en el sistema, para compilar cualquier código puedes usar simplemente:
 
 ```bash
-gcc mi_juego.c -o juego -lgraph3 -lm
-./juego
-
+cgraph mi_programa.c
 ```
+*Esto autocompletará el enlace y te entregará inmediatamente tu archivo ejecutable `./mi_programa`.*
 
-### Ejemplo: Interfaz Dinámica y Floodfill
+### Directorio de Ejemplos
+Dentro del repositorio clonado encontrarás una carpeta llamada `ejemplos/`. Te sugerimos explorar y compilar los archivos (`01_basico.c`, `02_colores.c`, ..., `06_avanzado.c`) para dominar rápidamente la librería.
+
+### Código Básico (Hola Mundo Gráfico)
 
 ```c
 #include <libgraph3.h>
 
 int main() {
-    int gd = DETECT, gm = 0;
-    initgraph(&gd, &gm, "");
+    // 1. Inicializar ventana de 800x600
+    initwindow(800, 600, "Mi Primer Juego");
 
-    setbkcolor(LIGHTGRAY);
+    // 2. Colores y Dibujo
+    setbkcolor(DARKGRAY);
     cleardevice();
 
-    // 1. Uso de Medidores de Entorno
-    int cx = getmaxx() / 2;
-    int cy = getmaxy() / 2;
-
-    // 2. Geometría y Bote de Pintura (Floodfill)
-    setcolor(YELLOW);
-    circle(cx - 40, cy, 60);
-    circle(cx + 40, cy, 60);
-
-    setfillstyle(SOLID_FILL, LIGHTBLUE);
-    floodfill(cx, cy, YELLOW); // Rellena la intersección de los círculos
-
-    // 3. Texto Dinámico Justificado
-    settextstyle(0, 0, 2); // Tamaño x2
-    settextjustify(CENTER_TEXT, BOTTOM_TEXT);
-    setcolor(BLACK);
-    outtextxy(cx, cy - 70, "GRAFICOS ACELERADOS");
-
-    // 4. Interacción en Tiempo Real
-    while (!kbhit()) {
-        // El programa corre libremente hasta presionar una tecla
-        delay(16);
-    }
-
-    getch(); // Limpia el buffer
-    closegraph();
+    setcolor(COLOR(0, 255, 128)); // True Color
+    circle(400, 300, 100);
     
+    setfillstyle(SOLID_FILL, BLUE); // Clásico BGI
+    floodfill(400, 300, COLOR(0, 255, 128));
+
+    // 3. Interacción
+    setcolor(WHITE);
+    outtextxy(10, 10, "Presiona una tecla...");
+    getch(); 
+
+    closegraph();
     return 0;
 }
-
 ```
 
 ---
@@ -128,32 +87,23 @@ int main() {
 ## 📚 Referencia de la API (Funciones Portadas)
 
 **Control del Sistema:**
-
-* `initgraph(int *gd, int *gm, const char *path)`
+* `initgraph(int *gd, int *gm, const char *path)` *(Modo Legacy)*
+* `initwindow(int width, int height, const char* title)` *(Modo Moderno)*
 * `closegraph()`
 * `delay(int millis)`
 
-**Lectura de Entorno y Estado (Getters):**
-
+**Lectura de Entorno y Estado:**
 * `getmaxx()`, `getmaxy()`
 * `getx()`, `gety()`
 * `getcolor()`, `getbkcolor()`
 * `textwidth(const char *text)`, `textheight(const char *text)`
 
-**Interacción (Teclado):**
-
+**Interacción (Teclado y Ratón):**
 * `kbhit()`: Verifica si hay teclas en cola sin pausar el hilo.
 * `getch()`: Captura la tecla presionada.
-
-**Cursor Gráfico (Current Pointer):**
-
-* `moveto(int x, int y)`
-* `lineto(int x, int y)`
-* `moverel(int dx, int dy)`
-* `linerel(int dx, int dy)`
+* `mousex()`, `mousey()`, `ismouseclick()`, `clearmouseclick()`, `ismousedown()`
 
 **Geometría y Relleno:**
-
 * `putpixel(int x, int y, int color)`
 * `line(int x1, int y1, int x2, int y2)`
 * `rectangle(int left, int top, int right, int bottom)`
@@ -165,20 +115,27 @@ int main() {
 * `floodfill(int x, int y, int border)`
 
 **Colores y Estilos:**
-
 * `setcolor(int color)`
 * `setbkcolor(int color)`
 * `setfillstyle(int pattern, int color)`
 * `cleardevice()`
+* Macro `COLOR(R, G, B)`
 
 **Texto:**
-
 * `outtextxy(int x, int y, const char *text)`
 * `settextstyle(int font, int direction, int charsize)`
 * `settextjustify(int horiz, int vert)`
 
-**Memoria Visual (Sprites):**
-
+**Memoria Visual e Imágenes (Sprites):**
 * `imagesize(int left, int top, int right, int bottom)`
 * `getimage(int left, int top, int right, int bottom, void *bitmap)`
 * `putimage(int left, int top, void *bitmap, int op)`
+* `readimagefile(const char *filename, int left, int top, int right, int bottom)`
+
+**Controles de Interfaz de Usuario (UI):**
+* `button(left, top, right, bottom, text)`
+* `checkbox(x, y, text, &estado)`
+* `slider(x, y, len, text, &valor)`
+* `progressbar(left, top, right, bottom, porcentaje)`
+* `inputdialog_int(prompt)`
+* `drawtable(x, y, rows, cols, w, h, headers, data, &sel_row, &sel_col)`
