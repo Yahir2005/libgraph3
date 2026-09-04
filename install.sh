@@ -37,7 +37,7 @@ fi
 echo "[2/4] Compilando libgraph3..."
 mkdir -p build && cd build
 cmake .. -DFETCHCONTENT_QUIET=OFF
-make -j$(nproc 2>/dev/null || echo 2)
+make -j$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo 2)
 
 echo "[3/4] Instalando librerías globalmente en el sistema..."
 EXT="so"
@@ -53,10 +53,19 @@ sudo mkdir -p /usr/local/share/libgraph3
 echo "Descargando fuente OpenSans portable..."
 sudo curl -sL https://raw.githubusercontent.com/google/fonts/main/ofl/opensans/OpenSans-Regular.ttf -o /usr/local/share/libgraph3/font.ttf || true
 
-size=$(stat -c%s "/usr/local/share/libgraph3/font.ttf" 2>/dev/null || echo 0)
+if [ "$OS_TYPE" == "macos" ]; then
+    size=$(stat -f "%z" "/usr/local/share/libgraph3/font.ttf" 2>/dev/null || echo 0)
+else
+    size=$(stat -c%s "/usr/local/share/libgraph3/font.ttf" 2>/dev/null || echo 0)
+fi
+
 if [ "$size" -lt 10000 ]; then
     echo "[ADVERTENCIA] No se pudo descargar la fuente de internet. Usando fuente local del sistema..."
-    sudo cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/local/share/libgraph3/font.ttf 2>/dev/null || true
+    if [ "$OS_TYPE" == "macos" ]; then
+        sudo cp /System/Library/Fonts/Supplemental/Arial.ttf /usr/local/share/libgraph3/font.ttf 2>/dev/null || true
+    else
+        sudo cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /usr/local/share/libgraph3/font.ttf 2>/dev/null || true
+    fi
 fi
 
 if [ "$OS_TYPE" != "macos" ]; then
@@ -76,7 +85,11 @@ FILENAME=$(basename -- "$1")
 OUTFILE="${FILENAME%.*}"
 
 echo "Compilando $1 -> $OUTFILE ..."
-gcc "$@" -o "$OUTFILE" -lgraph3 -lm
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    gcc "$@" -o "$OUTFILE" -I/usr/local/include -L/usr/local/lib -lgraph3 -lm
+else
+    gcc "$@" -o "$OUTFILE" -lgraph3 -lm
+fi
 EOF
 chmod +x cgraph
 sudo cp cgraph /usr/local/bin/cgraph
