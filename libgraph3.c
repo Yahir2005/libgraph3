@@ -9,7 +9,16 @@
 
 static SDL_Window* window = NULL;
 static SDL_Renderer* renderer = NULL;
+static SDL_Texture* screen_texture = NULL;
 static TTF_Font* default_font = NULL;
+
+static void update_screen(void) {
+    if (!renderer || !screen_texture) return;
+    SDL_SetRenderTarget(renderer, NULL);
+    SDL_RenderTexture(renderer, screen_texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+    SDL_SetRenderTarget(renderer, screen_texture);
+}
 
 static int current_color = WHITE;
 static int current_bkcolor = BLACK;
@@ -40,13 +49,24 @@ static BGIColor palette[16] = {
     {255, 85, 85},   {255, 85, 255},  {255, 255, 85},  {255, 255, 255}
 };
 
-void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver) {
+static BGIColor resolve_color(int color_code) {
+    if (color_code >= 0 && color_code <= 15) {
+        return palette[color_code];
+    }
+    BGIColor c;
+    c.r = (color_code >> 16) & 0xFF;
+    c.g = (color_code >> 8) & 0xFF;
+    c.b = color_code & 0xFF;
+    return c;
+}
+
+void initwindow(int width, int height, const char* title) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         printf("Error inicializando SDL: %s\n", SDL_GetError());
         return;
     }
     
-    if (!SDL_CreateWindowAndRenderer("libgraph3 - Motor SDL3", 640, 480, 0, &window, &renderer)) {
+    if (!SDL_CreateWindowAndRenderer(title, width, height, 0, &window, &renderer)) {
         printf("Error creando ventana: %s\n", SDL_GetError());
         return;
     }
@@ -56,15 +76,23 @@ void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver) {
         return;
     }
 
-    default_font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18);
+    default_font = TTF_OpenFont("/usr/local/share/libgraph3/font.ttf", 18);
     if (!default_font) {
-        printf("Advertencia: No se pudo cargar la fuente por defecto.\n");
+        printf("Advertencia: No se pudo cargar la fuente por defecto (/usr/local/share/libgraph3/font.ttf). Error: %s\n", SDL_GetError());
     }
+
+    screen_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, width, height);
+    SDL_SetRenderTarget(renderer, screen_texture);
 
     cleardevice();
 }
 
+void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver) {
+    initwindow(640, 480, "libgraph3 - Motor SDL3");
+}
+
 void closegraph(void) {
+    if (screen_texture) SDL_DestroyTexture(screen_texture);
     if (default_font) TTF_CloseFont(default_font);
     TTF_Quit(); 
     if (renderer) SDL_DestroyRenderer(renderer);
@@ -76,7 +104,7 @@ void delay(int millis) {
     /* Aqui se hace visible el frame completo: todas las primitivas dibujadas
        desde el ultimo present() se publican de una sola vez, evitando el
        parpadeo / dibujos a medias que se veian antes. */
-    SDL_RenderPresent(renderer);
+    update_screen();
     SDL_Delay(millis);
 }
 
@@ -98,13 +126,13 @@ static void procesar_eventos(void) {
 }
 
 int kbhit(void) {
-    SDL_RenderPresent(renderer);
+    update_screen();
     procesar_eventos();
     return (key_buffer != 0) ? 1 : 0;
 }
 
 int getch(void) {
-    SDL_RenderPresent(renderer);
+    update_screen();
     while (key_buffer == 0) {
         procesar_eventos();
         SDL_Delay(10); 
@@ -112,6 +140,89 @@ int getch(void) {
     int key = key_buffer;
     key_buffer = 0; 
     return key;
+}
+
+int drawtable(int x, int y, int rows, int cols, int cell_w, int cell_h, const char *headers[], const char *data[], int *sel_row, int *sel_col) {
+    int old_color = current_color;
+    int old_fill = current_fill_color;
+    int old_horiz = current_text_horiz;
+    int old_vert = current_text_vert;
+    
+    int header_offset = (headers != NULL) ? 1 : 0;
+    int total_rows = rows + header_offset;
+    
+    int table_w = cols * cell_w;
+    int table_h = total_rows * cell_h;
+    
+    int clicked = 0;
+    
+    /* Detect click inside the table bounds */
+    if (ismouseclick()) {
+        if (mouse_x >= x && mouse_x < x + table_w && mouse_y >= y && mouse_y < y + table_h) {
+            int click_r = (mouse_y - y) / cell_h;
+            int click_c = (mouse_x - x) / cell_w;
+            
+            if (click_r >= header_offset) { /* Only selectable if it's not a header */
+                if (sel_row) *sel_row = click_r - header_offset;
+                if (sel_col) *sel_col = click_c;
+                clicked = 1;
+            }
+            clearmouseclick();
+        }
+    }
+
+    settextjustify(CENTER_TEXT, CENTER_TEXT);
+
+    /* Draw Headers */
+    if (headers != NULL) {
+        setfillstyle(SOLID_FILL, DARKGRAY);
+        setcolor(WHITE);
+        for (int c = 0; c < cols; c++) {
+            int cx = x + c * cell_w;
+            int cy = y;
+            bar(cx, cy, cx + cell_w, cy + cell_h);
+            rectangle(cx, cy, cx + cell_w, cy + cell_h);
+            if (headers[c]) {
+                outtextxy(cx + cell_w / 2, cy + cell_h / 2, headers[c]);
+            }
+        }
+    }
+
+    /* Draw Data Rows */
+    setcolor(BLACK); /* Grid and text color */
+    for (int r = 0; r < rows; r++) {
+        int cy = y + (r + header_offset) * cell_h;
+        for (int c = 0; c < cols; c++) {
+            int cx = x + c * cell_w;
+            
+            /* Background color logic (Zebra striping + Selection) */
+            if (sel_row && sel_col && *sel_row == r && *sel_col == c) {
+                setfillstyle(SOLID_FILL, COLOR(173, 216, 230)); /* LightBlue selection */
+            } else if (sel_row && *sel_row == r) {
+                setfillstyle(SOLID_FILL, COLOR(215, 235, 255)); /* Row selection highlight */
+            } else if (r % 2 == 0) {
+                setfillstyle(SOLID_FILL, WHITE);
+            } else {
+                setfillstyle(SOLID_FILL, COLOR(240, 240, 240)); /* Very light gray */
+            }
+            
+            bar(cx, cy, cx + cell_w, cy + cell_h);
+            rectangle(cx, cy, cx + cell_w, cy + cell_h);
+            
+            /* Text drawing */
+            const char *cell_text = data[r * cols + c];
+            if (cell_text) {
+                outtextxy(cx + cell_w / 2, cy + cell_h / 2, cell_text);
+            }
+        }
+    }
+
+    /* Restore graphics state */
+    setcolor(old_color);
+    setfillstyle(SOLID_FILL, old_fill);
+    settextjustify(old_horiz, old_vert);
+
+    return clicked;
 }
 
 int ismouseclick(void) {
@@ -141,11 +252,11 @@ int ismousedown(void) {
 int mousex(void) { return mouse_x; }
 int mousey(void) { return mouse_y; }
 
-void setcolor(int color) { if (color >= 0 && color <= 15) current_color = color; }
-void setbkcolor(int color) { if (color >= 0 && color <= 15) current_bkcolor = color; }
+void setcolor(int color) { if (color >= 0) current_color = color; }
+void setbkcolor(int color) { if (color >= 0) current_bkcolor = color; }
 
 void cleardevice(void) {
-    BGIColor bg = palette[current_bkcolor];
+    BGIColor bg = resolve_color(current_bkcolor);
     SDL_SetRenderDrawColor(renderer, bg.r, bg.g, bg.b, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
     /* No presentamos aqui: solo preparamos el back buffer.
@@ -156,7 +267,7 @@ void cleardevice(void) {
 }
 
 void line(int x1, int y1, int x2, int y2) {
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
     SDL_RenderLine(renderer, x1, y1, x2, y2);
 }
@@ -164,21 +275,21 @@ void line(int x1, int y1, int x2, int y2) {
 void putpixel(int x, int y, int color) {
     int old_color = current_color;
     setcolor(color);
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
     SDL_RenderPoint(renderer, (float)x, (float)y);
     setcolor(old_color);
 }
 
 void rectangle(int left, int top, int right, int bottom) {
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
     SDL_FRect rect = { (float)left, (float)top, (float)(right - left), (float)(bottom - top) };
     SDL_RenderRect(renderer, &rect);
 }
 
 void circle(int xc, int yc, int r) {
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
     int x = 0, y = r;
     int d = 3 - 2 * r;
@@ -218,7 +329,7 @@ void outtextxy(int x, int y, const char *text) {
         adj_y = y - text_h;
     }
 
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_Color textColor = { fg.r, fg.g, fg.b, 255 };
 
     SDL_Surface* textSurface = TTF_RenderText_Blended(default_font, text, 0, textColor);
@@ -300,7 +411,7 @@ void drawpoly(int numpoints, int *polypoints) {
 void ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius) {
     if (xradius <= 0 || yradius <= 0) return;
 
-    BGIColor fg = palette[current_color];
+    BGIColor fg = resolve_color(current_color);
     SDL_SetRenderDrawColor(renderer, fg.r, fg.g, fg.b, SDL_ALPHA_OPAQUE);
 
     float step = 1.0f / (float)(xradius > yradius ? xradius : yradius);
@@ -352,7 +463,7 @@ int getbkcolor(void) {
 
 void setfillstyle(int pattern, int color) {
     current_fill_pattern = pattern;
-    if (color >= 0 && color <= 15) {
+    if (color >= 0) {
         current_fill_color = color;
     }
 }
@@ -360,7 +471,7 @@ void setfillstyle(int pattern, int color) {
 void bar(int left, int top, int right, int bottom) {
     if (current_fill_pattern == EMPTY_FILL) return;
 
-    BGIColor fill_bg = palette[current_fill_color];
+    BGIColor fill_bg = resolve_color(current_fill_color);
     SDL_SetRenderDrawColor(renderer, fill_bg.r, fill_bg.g, fill_bg.b, SDL_ALPHA_OPAQUE);
 
     SDL_FRect rect = { (float)left, (float)top, (float)(right - left), (float)(bottom - top) };
@@ -384,10 +495,10 @@ void floodfill(int x, int y, int border) {
         return;
     }
 
-    BGIColor fill_bgi = palette[current_fill_color];
+    BGIColor fill_bgi = resolve_color(current_fill_color);
     Uint32 fill_color = (255 << 24) | (fill_bgi.r << 16) | (fill_bgi.g << 8) | fill_bgi.b;
 
-    BGIColor border_bgi = palette[border];
+    BGIColor border_bgi = resolve_color(border);
     Uint32 target_border = (255 << 24) | (border_bgi.r << 16) | (border_bgi.g << 8) | border_bgi.b;
 
     Uint32* pixels = (Uint32*)surf->pixels;
@@ -420,10 +531,12 @@ void floodfill(int x, int y, int border) {
         if (current_pixel != target_border && current_pixel != fill_color) {
             pixels[idx] = fill_color;
             
-            stack_x[stack_ptr] = cx + 1; stack_y[stack_ptr] = cy; stack_ptr++;
-            stack_x[stack_ptr] = cx - 1; stack_y[stack_ptr] = cy; stack_ptr++;
-            stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy + 1; stack_ptr++;
-            stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy - 1; stack_ptr++;
+            if (stack_ptr + 4 <= max_stack) {
+                stack_x[stack_ptr] = cx + 1; stack_y[stack_ptr] = cy; stack_ptr++;
+                stack_x[stack_ptr] = cx - 1; stack_y[stack_ptr] = cy; stack_ptr++;
+                stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy + 1; stack_ptr++;
+                stack_x[stack_ptr] = cx; stack_y[stack_ptr] = cy - 1; stack_ptr++;
+            }
         }
     }
 
@@ -503,6 +616,26 @@ void putimage(int left, int top, void *bitmap, int op) {
 
     SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
     if (tex) {
+        SDL_FRect dest = { (float)left, (float)top, (float)w, (float)h };
+        SDL_RenderTexture(renderer, tex, NULL, &dest);
+        SDL_DestroyTexture(tex);
+    }
+    SDL_DestroySurface(surf);
+}
+
+void readimagefile(const char *filename, int left, int top, int right, int bottom) {
+    if (!filename || !renderer) return;
+
+    SDL_Surface* surf = SDL_LoadBMP(filename);
+    if (!surf) {
+        printf("Error cargando imagen %s: %s\n", filename, SDL_GetError());
+        return;
+    }
+
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    if (tex) {
+        int w = right - left;
+        int h = bottom - top;
         SDL_FRect dest = { (float)left, (float)top, (float)w, (float)h };
         SDL_RenderTexture(renderer, tex, NULL, &dest);
         SDL_DestroyTexture(tex);

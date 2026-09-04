@@ -37,11 +37,15 @@ extern "C" {
 #define BOTTOM_TEXT  0
 #define TOP_TEXT     2
 
+/* Macro para True Color (El bit 24 en 1 indica que es RGB personalizado) */
+#define COLOR(r, g, b) (0x01000000 | (((r) & 0xFF) << 16) | (((g) & 0xFF) << 8) | ((b) & 0xFF))
+
 /* Memoria Visual y Sprites */
 #define COPY_PUT 0
 
 /* Inicialización */
 void initgraph(int *graphdriver, int *graphmode, const char *pathtodriver);
+void initwindow(int width, int height, const char* title);
 void closegraph(void);
 void delay(int millis);
 
@@ -97,6 +101,7 @@ void settextjustify(int horiz, int vert);
 unsigned int imagesize(int left, int top, int right, int bottom);
 void getimage(int left, int top, int right, int bottom, void *bitmap);
 void putimage(int left, int top, void *bitmap, int op);
+void readimagefile(const char *filename, int left, int top, int right, int bottom);
 
 /* Soporte para Ratón y UI */
 int ismouseclick(void);
@@ -109,6 +114,7 @@ int checkbox(int x, int y, const char *text, int *estado);
 void progressbar(int left, int top, int right, int bottom, int porcentaje);
 int slider(int x, int y, int len, const char *text, int *valor);
 int textfield(int x, int y, int width, char *buffer, int max_len, int *is_focused);
+int drawtable(int x, int y, int rows, int cols, int cell_w, int cell_h, const char *headers[], const char *data[], int *sel_row, int *sel_col);
 
 /* Cuadros de Diálogo (UI) */
 int inputdialog_int(const char *prompt);
